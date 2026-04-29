@@ -460,6 +460,44 @@ html, body {
 .widget:nth-child(3) { animation-delay: 0.2s; }
 .widget:nth-child(4) { animation-delay: 0.3s; }
 
+/* ── YouTube Overlay ──────────────────────────────────── */
+.youtube-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.youtube-overlay.hidden {
+  display: none;
+}
+
+#youtube-container {
+  width: 100%;
+  height: 100%;
+}
+
+#youtube-container iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* ── Sleep Overlay ───────────────────────────────────── */
+.sleep-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 160;
+  background: #000;
+}
+
+.sleep-overlay.hidden {
+  display: none;
+}
+
 /* ── Browser Fullscreen Button ────────────────────────── */
 .browser-fullscreen-btn {
   position: fixed;

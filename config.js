@@ -70,6 +70,19 @@ const CONFIG = {
   // How often to refresh MTA data (in seconds)
   mtaRefreshInterval: 30,
 
+  // ── Firebase (for iPhone remote control) ────────────────
+  // Paste your Firebase config here after creating a project at
+  // https://console.firebase.google.com
+  firebase: {
+    // apiKey: "your-api-key",
+    // authDomain: "your-project.firebaseapp.com",
+    // databaseURL: "https://your-project-default-rtdb.firebaseio.com",
+    // projectId: "your-project-id",
+    // storageBucket: "your-project.firebasestorage.app",
+    // messagingSenderId: "123456789",
+    // appId: "your-app-id",
+  },
+
   // ── Display ─────────────────────────────────────────────
   // Use 24-hour clock format
   use24HourClock: false,

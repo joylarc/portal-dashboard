@@ -107,7 +107,16 @@
     <span>Fullscreen</span>
   </button>
 
+  <!-- YouTube overlay (hidden by default) -->
+  <div id="youtube-overlay" class="youtube-overlay hidden">
+    <div id="youtube-container"></div>
+  </div>
+
+  <!-- Sleep overlay (hidden by default) -->
+  <div id="sleep-overlay" class="sleep-overlay hidden"></div>
+
   <script src="config.js"></script>
   <script src="js/dashboard.js"></script>
+  <script type="module" src="js/firebase-listener.js"></script>
 </body>
 </html>
