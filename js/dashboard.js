@@ -179,29 +179,68 @@
       });
     }
 
-    // Stations
+    // Stations — two-column layout (uptown / downtown)
     stationsEl.innerHTML = "";
     data.stations.forEach((station) => {
       const stationDiv = document.createElement("div");
       stationDiv.className = "mta-station";
 
-      let html = `<div class="mta-station-name">${station.name}</div>`;
-
+      // Split departures into two direction groups
+      const dirs = {};
       station.departures.forEach((dep) => {
-        const timesHtml = dep.times
-          .map((t) => {
-            if (t <= 1) return `<span class="mta-time-arriving">Arriving</span>`;
-            return `${t} min`;
-          })
-          .join(", ");
-
-        html += `
-          <div class="mta-departure">
-            <span class="mta-line-badge line-${dep.line}">${dep.line}</span>
-            <span class="mta-direction">${dep.direction}</span>
-            <span class="mta-times">${timesHtml}</span>
-          </div>`;
+        if (!dirs[dep.direction]) dirs[dep.direction] = [];
+        dep.times.forEach((t) => {
+          dirs[dep.direction].push({ line: dep.line, minutes: t });
+        });
       });
+
+      // Sort each direction by minutes
+      for (const d in dirs) {
+        dirs[d].sort((a, b) => a.minutes - b.minutes);
+      }
+
+      // Determine column labels (first is usually Uptown, second Downtown/Brooklyn/Jamaica)
+      const dirNames = Object.keys(dirs);
+      const uptownIdx = dirNames.indexOf("Uptown");
+      let col1Name, col2Name;
+      if (uptownIdx === 0) {
+        col1Name = dirNames[0]; col2Name = dirNames[1];
+      } else if (uptownIdx === 1) {
+        col1Name = dirNames[1]; col2Name = dirNames[0];
+      } else {
+        col1Name = dirNames[0]; col2Name = dirNames[1];
+      }
+
+      let html = `<div class="mta-station-name">${station.name}</div>`;
+      html += `<div class="mta-columns">`;
+
+      // Column 1
+      html += `<div class="mta-col">`;
+      html += `<div class="mta-col-header">${col1Name || ""}</div>`;
+      if (col1Name && dirs[col1Name]) {
+        dirs[col1Name].forEach((dep) => {
+          const timeStr = dep.minutes <= 1
+            ? `<span class="mta-time-arriving">Arriving</span>`
+            : `${dep.minutes} min`;
+          html += `<div class="mta-dep-row"><span class="mta-line-badge line-${dep.line}">${dep.line}</span> ${timeStr}</div>`;
+        });
+      }
+      html += `</div>`;
+
+      // Column 2
+      html += `<div class="mta-col">`;
+      html += `<div class="mta-col-header">${col2Name || ""}</div>`;
+      if (col2Name && dirs[col2Name]) {
+        dirs[col2Name].forEach((dep) => {
+          const timeStr = dep.minutes <= 1
+            ? `<span class="mta-time-arriving">Arriving</span>`
+            : `${dep.minutes} min`;
+          html += `<div class="mta-dep-row"><span class="mta-line-badge line-${dep.line}">${dep.line}</span> ${timeStr}</div>`;
+        });
+      }
+      html += `</div>`;
+
+      html += `</div>`;
 
       stationDiv.innerHTML = html;
       stationsEl.appendChild(stationDiv);

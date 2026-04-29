@@ -317,6 +317,32 @@ html, body {
   margin-bottom: 4px;
 }
 
+.mta-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.mta-col-header {
+  font-size: clamp(0.65rem, 1vw, 0.75rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  padding-bottom: 3px;
+  margin-bottom: 3px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mta-dep-row {
+  display: flex;
+  align-items: center;
+  padding: 2px 0;
+  gap: 6px;
+  font-size: clamp(0.7rem, 1.1vw, 0.85rem);
+  font-variant-numeric: tabular-nums;
+}
+
 .mta-departure {
   display: flex;
   align-items: center;
@@ -381,23 +407,32 @@ html, body {
 
 /* Fullscreen MTA adjustments */
 .widget.fullscreen .mta-stations {
-  column-count: 2;
-  column-gap: 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
 
 .widget.fullscreen .mta-station {
   break-inside: avoid;
 }
 
-.widget.fullscreen .mta-departure {
+.widget.fullscreen .mta-dep-row {
   font-size: 1rem;
-  padding: 5px 0;
+  padding: 4px 0;
 }
 
 .widget.fullscreen .mta-line-badge {
-  width: 30px;
-  height: 30px;
-  font-size: 0.9rem;
+  width: 28px;
+  height: 28px;
+  font-size: 0.85rem;
+}
+
+.widget.fullscreen .mta-station-name {
+  font-size: 1rem;
+}
+
+.widget.fullscreen .mta-col-header {
+  font-size: 0.8rem;
 }
 
 /* ── Calendar Widget ──────────────────────────────────── */

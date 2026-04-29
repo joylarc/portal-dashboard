@@ -30,41 +30,14 @@ const CONFIG = {
   // Your Cloudflare Worker URL for MTA data (see README for setup)
   mtaProxyUrl: "https://portal-mta.joy-arcangeli.workers.dev/",
 
-  // Stations to display (pre-configured for your stops)
+  // Stations to display (configured in Cloudflare Worker)
+  // Stop IDs: A38=Fulton A/C, 230=Fulton 2/3, 416=BB 4/5, 640=BB 6, E01=WTC E, R25=City Hall R
   mtaStations: [
-    {
-      name: "Fulton St",
-      lines: ["A", "C", "2", "3"],
-      gtfsStopIds: {
-        "A": ["A38"],   // Fulton St on A/C/E
-        "C": ["A38"],
-        "2": ["230"],   // Fulton St on 1/2/3
-        "3": ["230"],
-      }
-    },
-    {
-      name: "Brooklyn Bridge–City Hall",
-      lines: ["4", "5", "6"],
-      gtfsStopIds: {
-        "4": ["416"],
-        "5": ["416"],
-        "6": ["416"],
-      }
-    },
-    {
-      name: "World Trade Center",
-      lines: ["E"],
-      gtfsStopIds: {
-        "E": ["A36"],
-      }
-    },
-    {
-      name: "City Hall",
-      lines: ["R"],
-      gtfsStopIds: {
-        "R": ["R25"],
-      }
-    }
+    { name: "Fulton St A/C", lines: ["A", "C"], gtfsStopIds: { "A": ["A38"], "C": ["A38"] } },
+    { name: "Fulton St 2/3", lines: ["2", "3"], gtfsStopIds: { "2": ["230"], "3": ["230"] } },
+    { name: "Brooklyn Bridge–City Hall", lines: ["4", "5", "6"], gtfsStopIds: { "4": ["416"], "5": ["416"], "6": ["640"] } },
+    { name: "World Trade Center", lines: ["E"], gtfsStopIds: { "E": ["E01"] } },
+    { name: "City Hall", lines: ["R"], gtfsStopIds: { "R": ["R25"] } }
   ],
 
   // How often to refresh MTA data (in seconds)
