@@ -72,7 +72,7 @@ const CONFIG = {
 
   // ── Recipes ────────────────────────────────────────────
   // Google Apps Script URL that serves recipe list from your Drive folder
-  recipesApiUrl: "",
+  recipesApiUrl: "https://script.google.com/macros/s/AKfycbyRpdDYRi09ZCYGxEYsowvVWP2UIhJ2whyAda_km4_u8ziJ9weR4PWpL4X5nYOIkEH2/exec",
 
   // ── Firebase (for iPhone remote control) ────────────────
   // Paste your Firebase config here after creating a project at
