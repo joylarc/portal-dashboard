@@ -70,6 +70,10 @@ const CONFIG = {
   // How often to refresh MTA data (in seconds)
   mtaRefreshInterval: 30,
 
+  // ── Recipes ────────────────────────────────────────────
+  // Google Apps Script URL that serves recipe list from your Drive folder
+  recipesApiUrl: "",
+
   // ── Firebase (for iPhone remote control) ────────────────
   // Paste your Firebase config here after creating a project at
   // https://console.firebase.google.com

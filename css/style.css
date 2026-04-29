@@ -483,6 +483,29 @@ html, body {
   border: none;
 }
 
+/* ── Recipe Overlay ──────────────────────────────────── */
+.recipe-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: #fff;
+}
+
+.recipe-overlay.hidden {
+  display: none;
+}
+
+#recipe-container {
+  width: 100%;
+  height: 100%;
+}
+
+#recipe-container iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
 /* ── Alarm Overlay ───────────────────────────────────── */
 .alarm-overlay {
   position: fixed;

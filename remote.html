@@ -292,6 +292,35 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    /* Recipes */
+    .recipe-list {
+      max-height: 250px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .recipe-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.85rem;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      display: block;
+      border: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.2s;
+    }
+
+    .recipe-item:active {
+      background: var(--bg-card-active);
+    }
+
     /* Toast notification */
     .toast {
       position: fixed;
@@ -385,6 +414,15 @@
           <button class="action-btn" id="yt-stop">Stop</button>
         </div>
       </div>
+    </div>
+
+    <!-- Recipes -->
+    <div class="section" id="recipes-section" style="display:none;">
+      <div class="section-label">Recipes</div>
+      <div class="recipe-list" id="recipe-list">
+        <div style="color: var(--text-muted); font-size: 0.8rem;">Loading recipes...</div>
+      </div>
+      <button class="action-btn" id="recipe-close" style="margin-top: 8px; display: none;">Close Recipe</button>
     </div>
 
     <!-- Quick Actions -->
@@ -617,6 +655,42 @@
         sendCommand({ action: "stop-youtube" });
         ytControls.classList.add("hidden");
         showToast("YouTube stopped");
+      });
+
+      // ── Recipes ─────────────────────────────────────────
+      var recipesSection = document.getElementById("recipes-section");
+      var recipeList = document.getElementById("recipe-list");
+      var recipeCloseBtn = document.getElementById("recipe-close");
+
+      if (CONFIG.recipesApiUrl) {
+        recipesSection.style.display = "";
+        fetch(CONFIG.recipesApiUrl)
+          .then(function (res) { return res.json(); })
+          .then(function (recipes) {
+            recipeList.innerHTML = "";
+            for (var i = 0; i < recipes.length; i++) {
+              (function (recipe) {
+                var btn = document.createElement("button");
+                btn.className = "recipe-item";
+                btn.textContent = recipe.name;
+                btn.addEventListener("click", function () {
+                  sendCommand({ action: "show-recipe", url: recipe.url });
+                  recipeCloseBtn.style.display = "";
+                  showToast("Showing " + recipe.name);
+                });
+                recipeList.appendChild(btn);
+              })(recipes[i]);
+            }
+          })
+          .catch(function () {
+            recipeList.innerHTML = '<div style="color: var(--red); font-size: 0.8rem;">Failed to load recipes</div>';
+          });
+      }
+
+      recipeCloseBtn.addEventListener("click", function () {
+        sendCommand({ action: "hide-recipe" });
+        recipeCloseBtn.style.display = "none";
+        showToast("Recipe closed");
       });
 
       // ── Quick Actions ──────────────────────────────────

@@ -134,6 +134,12 @@
       case "stop-youtube":
         hideYouTube();
         break;
+      case "show-recipe":
+        showRecipe(cmd.url);
+        break;
+      case "hide-recipe":
+        hideRecipe();
+        break;
       case "refresh":
         window.location.reload();
         break;
@@ -143,6 +149,7 @@
       case "wake":
         hideSleep();
         hideYouTube();
+        hideRecipe();
         hideAlarm();
         showAllWidgets();
         break;
@@ -235,6 +242,25 @@
 
   function hideSleep() {
     document.getElementById("sleep-overlay").classList.add("hidden");
+  }
+
+  // ── Recipes ──────────────────────────────────────────
+  function showRecipe(url) {
+    hideSleep();
+    hideYouTube();
+
+    var overlay = document.getElementById("recipe-overlay");
+    var container = document.getElementById("recipe-container");
+
+    container.innerHTML = '<iframe src="' + url + '"></iframe>';
+    overlay.classList.remove("hidden");
+  }
+
+  function hideRecipe() {
+    var overlay = document.getElementById("recipe-overlay");
+    var container = document.getElementById("recipe-container");
+    overlay.classList.add("hidden");
+    container.innerHTML = "";
   }
 
   // ── Alarm ────────────────────────────────────────────
