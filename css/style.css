@@ -164,23 +164,20 @@ html, body {
 }
 
 .clock-greeting {
-  font-size: clamp(0.8rem, 1.5vw, 1rem);
-  font-weight: 300;
-  color: var(--text-dim);
-  margin-top: 4px;
+  display: none;
 }
 
 /* Fullscreen clock adjustments */
 .widget.fullscreen .clock-time {
-  font-size: clamp(6rem, 15vw, 14rem);
+  font-size: clamp(9rem, 22vw, 21rem);
 }
 
 .widget.fullscreen .clock-seconds {
-  font-size: clamp(1.5rem, 4vw, 3rem);
+  font-size: clamp(2rem, 5vw, 4rem);
 }
 
 .widget.fullscreen .clock-date {
-  font-size: clamp(1.2rem, 3vw, 2.5rem);
+  font-size: clamp(2.4rem, 6vw, 5rem);
 }
 
 /* ── Photos Widget ────────────────────────────────────── */
@@ -484,6 +481,53 @@ html, body {
   width: 100%;
   height: 100%;
   border: none;
+}
+
+/* ── Alarm Overlay ───────────────────────────────────── */
+.alarm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 170;
+  background: #0a0a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  animation: alarm-pulse 1s ease-in-out infinite;
+}
+
+.alarm-overlay.hidden {
+  display: none;
+}
+
+.alarm-content {
+  text-align: center;
+}
+
+.alarm-icon {
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-weight: 700;
+  letter-spacing: 8px;
+  color: var(--accent);
+  margin-bottom: 20px;
+}
+
+.alarm-time {
+  font-size: clamp(6rem, 18vw, 16rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.alarm-dismiss-hint {
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  color: var(--text-dim);
+  margin-top: 30px;
+}
+
+@keyframes alarm-pulse {
+  0%, 100% { background: #0a0a1a; }
+  50% { background: #1a1a3a; }
 }
 
 /* ── Sleep Overlay ───────────────────────────────────── */

@@ -240,6 +240,58 @@
       background: var(--bg-card-active);
     }
 
+    /* Alarm */
+    .alarm-set-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .time-input {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1rem;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    .time-input:focus {
+      border-color: var(--accent);
+    }
+
+    .alarm-list {
+      margin-top: 8px;
+    }
+
+    .alarm-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-card);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 6px;
+    }
+
+    .alarm-item-time {
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    .alarm-delete {
+      background: none;
+      border: none;
+      color: var(--red);
+      font-size: 0.8rem;
+      cursor: pointer;
+      padding: 4px 8px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     /* Toast notification */
     .toast {
       position: fixed;
@@ -309,6 +361,16 @@
         </button>
       </div>
       <button class="show-all-btn active" id="btn-showall">Show All Widgets</button>
+    </div>
+
+    <!-- Alarm -->
+    <div class="section">
+      <div class="section-label">Alarm</div>
+      <div class="alarm-set-row">
+        <input type="time" class="time-input" id="alarm-time" value="07:00">
+        <button class="send-btn" id="alarm-set">Set Alarm</button>
+      </div>
+      <div class="alarm-list" id="alarm-list"></div>
     </div>
 
     <!-- YouTube -->
@@ -435,6 +497,65 @@
       document.getElementById("btn-showall").addEventListener("click", function () {
         sendCommand({ action: "show-all" });
         showToast("Showing all widgets");
+      });
+
+      // ── Alarms ─────────────────────────────────────────
+      function renderAlarms(alarms) {
+        var list = document.getElementById("alarm-list");
+        list.innerHTML = "";
+        if (!alarms) return;
+        var keys = Object.keys(alarms);
+        for (var i = 0; i < keys.length; i++) {
+          var alarm = alarms[keys[i]];
+          if (!alarm) continue;
+          var h = alarm.hour;
+          var ampm = h >= 12 ? "PM" : "AM";
+          h = h % 12 || 12;
+          var m = alarm.minute.toString();
+          if (m.length < 2) m = "0" + m;
+          var div = document.createElement("div");
+          div.className = "alarm-item";
+          div.innerHTML = '<span class="alarm-item-time">' + h + ":" + m + " " + ampm +
+            (alarm.fired ? " (done)" : "") +
+            '</span><button class="alarm-delete" data-key="' + keys[i] + '">Delete</button>';
+          list.appendChild(div);
+        }
+
+        var delBtns = list.querySelectorAll(".alarm-delete");
+        for (var j = 0; j < delBtns.length; j++) {
+          (function (btn) {
+            btn.addEventListener("click", function () {
+              db.ref("portal/alarms/" + btn.getAttribute("data-key")).remove();
+              showToast("Alarm deleted");
+            });
+          })(delBtns[j]);
+        }
+      }
+
+      // Listen for alarm changes
+      db.ref("portal/alarms").on("value", function (snap) {
+        renderAlarms(snap.val());
+      });
+
+      document.getElementById("alarm-set").addEventListener("click", function () {
+        var timeInput = document.getElementById("alarm-time");
+        var parts = timeInput.value.split(":");
+        if (parts.length !== 2) return;
+        var hour = parseInt(parts[0], 10);
+        var minute = parseInt(parts[1], 10);
+
+        var key = db.ref("portal/alarms").push().key;
+        db.ref("portal/alarms/" + key).set({
+          hour: hour,
+          minute: minute,
+          fired: false
+        });
+
+        var h = hour % 12 || 12;
+        var ampm = hour >= 12 ? "PM" : "AM";
+        var m = minute.toString();
+        if (m.length < 2) m = "0" + m;
+        showToast("Alarm set for " + h + ":" + m + " " + ampm);
       });
 
       // ── YouTube ────────────────────────────────────────

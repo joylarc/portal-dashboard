@@ -20,12 +20,101 @@
   var db = firebase.database();
   var lastTimestamp = 0;
 
+  // ── Listen for commands ────────────────────────────────
   db.ref("portal/command").on("value", function (snap) {
     var cmd = snap.val();
     if (!cmd || cmd.timestamp <= lastTimestamp) return;
     lastTimestamp = cmd.timestamp;
     handleCommand(cmd);
   });
+
+  // ── Listen for alarms ──────────────────────────────────
+  var alarmCheckInterval = null;
+  var activeAlarms = {};
+
+  db.ref("portal/alarms").on("value", function (snap) {
+    activeAlarms = snap.val() || {};
+    if (Object.keys(activeAlarms).length > 0 && !alarmCheckInterval) {
+      alarmCheckInterval = setInterval(checkAlarms, 1000);
+    } else if (Object.keys(activeAlarms).length === 0 && alarmCheckInterval) {
+      clearInterval(alarmCheckInterval);
+      alarmCheckInterval = null;
+    }
+  });
+
+  function checkAlarms() {
+    var now = new Date();
+    var currentHour = now.getHours();
+    var currentMin = now.getMinutes();
+    var currentSec = now.getSeconds();
+
+    var keys = Object.keys(activeAlarms);
+    for (var i = 0; i < keys.length; i++) {
+      var alarm = activeAlarms[keys[i]];
+      if (!alarm || alarm.fired) continue;
+
+      if (alarm.hour === currentHour && alarm.minute === currentMin && currentSec < 2) {
+        triggerAlarm(alarm);
+        // Mark as fired
+        db.ref("portal/alarms/" + keys[i] + "/fired").set(true);
+      }
+    }
+  }
+
+  var alarmAudio = null;
+
+  function triggerAlarm(alarm) {
+    var overlay = document.getElementById("alarm-overlay");
+    var timeDisplay = document.getElementById("alarm-display-time");
+
+    var now = new Date();
+    var hours = now.getHours();
+    var ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12 || 12;
+    var minutes = now.getMinutes().toString();
+    if (minutes.length < 2) minutes = "0" + minutes;
+    timeDisplay.textContent = hours + ":" + minutes + " " + ampm;
+
+    overlay.classList.remove("hidden");
+
+    // Play alarm sound using Web Audio API
+    try {
+      var ctx = new (window.AudioContext || window.webkitAudioContext)();
+      playAlarmTone(ctx);
+    } catch (e) {
+      console.log("Audio not available");
+    }
+
+    // Dismiss on tap
+    overlay.onclick = function () {
+      overlay.classList.add("hidden");
+      if (alarmAudio) {
+        clearInterval(alarmAudio);
+        alarmAudio = null;
+      }
+      overlay.onclick = null;
+    };
+  }
+
+  function playAlarmTone(ctx) {
+    var count = 0;
+    alarmAudio = setInterval(function () {
+      if (count >= 60) { // Stop after 60 beeps (~30 seconds)
+        clearInterval(alarmAudio);
+        alarmAudio = null;
+        return;
+      }
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = (count % 2 === 0) ? 880 : 660;
+      gain.gain.value = 0.3;
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.15);
+      count++;
+    }, 500);
+  }
 
   function handleCommand(cmd) {
     switch (cmd.action) {
@@ -47,7 +136,11 @@
       case "wake":
         hideSleep();
         hideYouTube();
+        hideAlarm();
         showAllWidgets();
+        break;
+      case "dismiss-alarm":
+        hideAlarm();
         break;
     }
   }
@@ -61,13 +154,11 @@
     var target = document.querySelector('[data-widget="' + widgetName + '"]');
     if (!target) return;
 
-    // Close any existing fullscreen
     var fullscreenWidgets = document.querySelectorAll(".widget.fullscreen");
     for (var i = 0; i < fullscreenWidgets.length; i++) {
       fullscreenWidgets[i].classList.remove("fullscreen");
     }
 
-    // Fullscreen the target widget
     target.classList.add("fullscreen");
     dashboard.classList.add("has-fullscreen");
   }
@@ -114,5 +205,14 @@
 
   function hideSleep() {
     document.getElementById("sleep-overlay").classList.add("hidden");
+  }
+
+  // ── Alarm ────────────────────────────────────────────
+  function hideAlarm() {
+    document.getElementById("alarm-overlay").classList.add("hidden");
+    if (alarmAudio) {
+      clearInterval(alarmAudio);
+      alarmAudio = null;
+    }
   }
 })();
