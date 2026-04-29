@@ -6,16 +6,12 @@
 (function () {
   "use strict";
 
-  console.log("CONFIG check:", window.CONFIG ? "exists" : "missing");
-  console.log("CONFIG.firebase:", window.CONFIG && CONFIG.firebase);
-  console.log("firebase SDK:", window.firebase ? "loaded" : "missing");
-
-  if (!window.CONFIG || !CONFIG.firebase || !CONFIG.firebase.apiKey) {
+  if (typeof CONFIG === "undefined" || !CONFIG.firebase || !CONFIG.firebase.apiKey) {
     console.log("Firebase not configured — remote control disabled");
     return;
   }
 
-  if (!window.firebase) {
+  if (typeof firebase === "undefined") {
     console.error("Firebase SDK not loaded");
     return;
   }
