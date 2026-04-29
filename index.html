@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="dashboard" class="dashboard">
+
+    <!-- Clock Widget -->
+    <div class="widget" id="widget-clock" data-widget="clock">
+      <button class="fullscreen-btn" aria-label="Toggle fullscreen">
+        <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/>
+        </svg>
+        <svg class="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 14h6v6m10-10h-6V4m0 6l7-7M3 21l7-7"/>
+        </svg>
+      </button>
+      <div class="widget-content clock-content">
+        <div class="clock-time" id="clock-time"></div>
+        <div class="clock-seconds" id="clock-seconds"></div>
+        <div class="clock-date" id="clock-date"></div>
+        <div class="clock-greeting" id="clock-greeting"></div>
+      </div>
+    </div>
+
+    <!-- Photos Widget -->
+    <div class="widget" id="widget-photos" data-widget="photos">
+      <button class="fullscreen-btn" aria-label="Toggle fullscreen">
+        <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/>
+        </svg>
+        <svg class="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 14h6v6m10-10h-6V4m0 6l7-7M3 21l7-7"/>
+        </svg>
+      </button>
+      <div class="widget-content photos-content">
+        <div class="photo-container" id="photo-container">
+          <div class="photo-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <path d="M21 15l-5-5L5 21"/>
+            </svg>
+            <p>Add photos to the <code>photos/</code> folder</p>
+          </div>
+        </div>
+        <div class="photo-dots" id="photo-dots"></div>
+      </div>
+    </div>
+
+    <!-- MTA Widget -->
+    <div class="widget" id="widget-mta" data-widget="mta">
+      <button class="fullscreen-btn" aria-label="Toggle fullscreen">
+        <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/>
+        </svg>
+        <svg class="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 14h6v6m10-10h-6V4m0 6l7-7M3 21l7-7"/>
+        </svg>
+      </button>
+      <div class="widget-content mta-content">
+        <div class="mta-header">
+          <h2>MTA Departures</h2>
+          <span class="mta-updated" id="mta-updated"></span>
+        </div>
+        <div class="mta-alerts" id="mta-alerts"></div>
+        <div class="mta-stations" id="mta-stations"></div>
+      </div>
+    </div>
+
+    <!-- Calendar Widget -->
+    <div class="widget" id="widget-calendar" data-widget="calendar">
+      <button class="fullscreen-btn" aria-label="Toggle fullscreen">
+        <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/>
+        </svg>
+        <svg class="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 14h6v6m10-10h-6V4m0 6l7-7M3 21l7-7"/>
+        </svg>
+      </button>
+      <div class="widget-content calendar-content">
+        <div class="calendar-container" id="calendar-container">
+          <div class="calendar-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+              <rect x="3" y="4" width="18" height="18" rx="2"/>
+              <path d="M16 2v4M8 2v4M3 10h18"/>
+            </svg>
+            <p>Set your Google Calendar URL in <code>config.js</code></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="config.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
