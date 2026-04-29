@@ -28,7 +28,7 @@ const CONFIG = {
 
   // ── MTA Configuration ───────────────────────────────────
   // Your Cloudflare Worker URL for MTA data (see README for setup)
-  mtaProxyUrl: "",
+  mtaProxyUrl: "https://portal-mta.joy-arcangeli.workers.dev/",
 
   // Stations to display (pre-configured for your stops)
   mtaStations: [
