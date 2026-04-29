@@ -74,13 +74,13 @@ const CONFIG = {
   // Paste your Firebase config here after creating a project at
   // https://console.firebase.google.com
   firebase: {
-    // apiKey: "your-api-key",
-    // authDomain: "your-project.firebaseapp.com",
-    // databaseURL: "https://your-project-default-rtdb.firebaseio.com",
-    // projectId: "your-project-id",
-    // storageBucket: "your-project.firebasestorage.app",
-    // messagingSenderId: "123456789",
-    // appId: "your-app-id",
+    apiKey: "AIzaSyD1cTCOOgek0WnwczijfhEx_N3DpKvDeNY",
+    authDomain: "portal-4e3e3.firebaseapp.com",
+    databaseURL: "https://portal-4e3e3-default-rtdb.firebaseio.com",
+    projectId: "portal-4e3e3",
+    storageBucket: "portal-4e3e3.firebasestorage.app",
+    messagingSenderId: "878737677803",
+    appId: "1:878737677803:web:d844cb2e865b35863b0dae",
   },
 
   // ── Display ─────────────────────────────────────────────
