@@ -448,6 +448,8 @@
           var parsed = new URL(url);
           if (parsed.hostname.indexOf("youtu.be") !== -1) {
             videoId = parsed.pathname.slice(1);
+          } else if (parsed.pathname.indexOf("/shorts/") !== -1) {
+            videoId = parsed.pathname.split("/shorts/")[1].split(/[/?]/)[0];
           } else if (parsed.searchParams.has("v")) {
             videoId = parsed.searchParams.get("v");
           }
