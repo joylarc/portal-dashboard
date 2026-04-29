@@ -287,6 +287,37 @@
     });
   }
 
+  // ── Browser Fullscreen (hides URL bar) ──────────────
+  function initBrowserFullscreen() {
+    const btn = document.getElementById("browser-fullscreen-btn");
+    if (!btn) return;
+
+    btn.addEventListener("click", () => {
+      const el = document.documentElement;
+      const rfs = el.requestFullscreen
+        || el.webkitRequestFullscreen
+        || el.mozRequestFullScreen
+        || el.msRequestFullscreen;
+      if (rfs) {
+        rfs.call(el);
+      }
+    });
+
+    // Hide button once we're in fullscreen
+    function onFSChange() {
+      const isFS = document.fullscreenElement
+        || document.webkitFullscreenElement
+        || document.mozFullScreenElement
+        || document.msFullscreenElement;
+      btn.classList.toggle("hidden", !!isFS);
+    }
+
+    document.addEventListener("fullscreenchange", onFSChange);
+    document.addEventListener("webkitfullscreenchange", onFSChange);
+    document.addEventListener("mozfullscreenchange", onFSChange);
+    document.addEventListener("MSFullscreenChange", onFSChange);
+  }
+
   // ── Initialize ───────────────────────────────────────────
   function init() {
     // Clock - update every second
@@ -305,6 +336,9 @@
 
     // Fullscreen
     initFullscreen();
+
+    // Browser fullscreen (hides URL bar)
+    initBrowserFullscreen();
   }
 
   // Start when DOM is ready
