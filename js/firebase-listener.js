@@ -1,9 +1,7 @@
 // ── Firebase Listener ─────────────────────────────────
 // Listens for remote commands from the iPhone remote control
 // and updates the Portal dashboard accordingly.
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-database.js";
+// Uses Firebase compat SDK for maximum browser compatibility.
 
 (function () {
   "use strict";
@@ -13,16 +11,19 @@ import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11
     return;
   }
 
-  const app = initializeApp(CONFIG.firebase);
-  const db = getDatabase(app);
+  if (!window.firebase) {
+    console.error("Firebase SDK not loaded");
+    return;
+  }
 
-  let lastTimestamp = 0;
+  var app = firebase.initializeApp(CONFIG.firebase);
+  var db = firebase.database();
+  var lastTimestamp = 0;
 
-  onValue(ref(db, "portal/command"), (snap) => {
-    const cmd = snap.val();
+  db.ref("portal/command").on("value", function (snap) {
+    var cmd = snap.val();
     if (!cmd || cmd.timestamp <= lastTimestamp) return;
     lastTimestamp = cmd.timestamp;
-
     handleCommand(cmd);
   });
 
@@ -56,14 +57,15 @@ import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11
     hideYouTube();
     hideSleep();
 
-    const dashboard = document.getElementById("dashboard");
-    const target = document.querySelector(`[data-widget="${widgetName}"]`);
+    var dashboard = document.getElementById("dashboard");
+    var target = document.querySelector('[data-widget="' + widgetName + '"]');
     if (!target) return;
 
     // Close any existing fullscreen
-    document.querySelectorAll(".widget.fullscreen").forEach((w) => {
-      w.classList.remove("fullscreen");
-    });
+    var fullscreenWidgets = document.querySelectorAll(".widget.fullscreen");
+    for (var i = 0; i < fullscreenWidgets.length; i++) {
+      fullscreenWidgets[i].classList.remove("fullscreen");
+    }
 
     // Fullscreen the target widget
     target.classList.add("fullscreen");
@@ -74,10 +76,11 @@ import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11
     hideYouTube();
     hideSleep();
 
-    const dashboard = document.getElementById("dashboard");
-    document.querySelectorAll(".widget.fullscreen").forEach((w) => {
-      w.classList.remove("fullscreen");
-    });
+    var dashboard = document.getElementById("dashboard");
+    var fullscreenWidgets = document.querySelectorAll(".widget.fullscreen");
+    for (var i = 0; i < fullscreenWidgets.length; i++) {
+      fullscreenWidgets[i].classList.remove("fullscreen");
+    }
     dashboard.classList.remove("has-fullscreen");
   }
 
@@ -85,22 +88,21 @@ import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11
   function playYouTube(videoId) {
     hideSleep();
 
-    const overlay = document.getElementById("youtube-overlay");
-    const container = document.getElementById("youtube-container");
+    var overlay = document.getElementById("youtube-overlay");
+    var container = document.getElementById("youtube-container");
 
-    container.innerHTML = `<iframe
-      src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1"
-      frameborder="0"
-      allow="autoplay; encrypted-media; fullscreen"
-      allowfullscreen
-    ></iframe>`;
+    container.innerHTML = '<iframe ' +
+      'src="https://www.youtube.com/embed/' + videoId + '?autoplay=1&rel=0&modestbranding=1" ' +
+      'frameborder="0" ' +
+      'allow="autoplay; encrypted-media; fullscreen" ' +
+      'allowfullscreen></iframe>';
 
     overlay.classList.remove("hidden");
   }
 
   function hideYouTube() {
-    const overlay = document.getElementById("youtube-overlay");
-    const container = document.getElementById("youtube-container");
+    var overlay = document.getElementById("youtube-overlay");
+    var container = document.getElementById("youtube-container");
     overlay.classList.add("hidden");
     container.innerHTML = "";
   }

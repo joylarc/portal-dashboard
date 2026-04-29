@@ -358,144 +358,139 @@
   <div class="toast" id="toast"></div>
 
   <script src="config.js"></script>
-  <script type="module">
-    // Firebase SDK (modular, from CDN)
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-database.js";
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script>
+    (function () {
+      var statusDot = document.getElementById("status-dot");
+      var statusText = document.getElementById("status-text");
+      var db = null;
 
-    const statusDot = document.getElementById("status-dot");
-    const statusText = document.getElementById("status-text");
-
-    // ── Firebase Init ──────────────────────────────────
-    let db = null;
-
-    try {
-      if (!CONFIG.firebase || !CONFIG.firebase.apiKey) {
-        throw new Error("Firebase not configured");
-      }
-      const app = initializeApp(CONFIG.firebase);
-      db = getDatabase(app);
-
-      // Connection status
-      const connRef = ref(db, ".info/connected");
-      onValue(connRef, (snap) => {
-        if (snap.val() === true) {
-          statusDot.classList.add("connected");
-          statusText.textContent = "Connected";
-        } else {
-          statusDot.classList.remove("connected");
-          statusText.textContent = "Reconnecting...";
-        }
-      });
-
-      // Listen for current state to sync button highlights
-      onValue(ref(db, "portal/command"), (snap) => {
-        const cmd = snap.val();
-        if (!cmd) return;
-        syncUI(cmd);
-      });
-
-    } catch (err) {
-      statusText.textContent = "Firebase not configured — check config.js";
-      console.error(err);
-    }
-
-    // ── Send Command ───────────────────────────────────
-    function sendCommand(command) {
-      if (!db) {
-        showToast("Firebase not connected");
-        return;
-      }
-      const payload = {
-        ...command,
-        timestamp: Date.now(),
-      };
-      set(ref(db, "portal/command"), payload);
-    }
-
-    // ── Sync UI with current state ─────────────────────
-    function syncUI(cmd) {
-      // Clear all active states
-      document.querySelectorAll(".widget-btn").forEach(b => b.classList.remove("active"));
-      document.getElementById("btn-showall").classList.remove("active");
-
-      if (cmd.action === "show-widget") {
-        const btn = document.getElementById(`btn-${cmd.widget}`);
-        if (btn) btn.classList.add("active");
-      } else if (cmd.action === "show-all") {
-        document.getElementById("btn-showall").classList.add("active");
-      }
-    }
-
-    // ── Widget Buttons ─────────────────────────────────
-    document.querySelectorAll(".widget-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const widget = btn.dataset.widget;
-        sendCommand({ action: "show-widget", widget });
-        showToast(`Showing ${btn.textContent.trim()}`);
-      });
-    });
-
-    document.getElementById("btn-showall").addEventListener("click", () => {
-      sendCommand({ action: "show-all" });
-      showToast("Showing all widgets");
-    });
-
-    // ── YouTube ────────────────────────────────────────
-    document.getElementById("youtube-send").addEventListener("click", () => {
-      const input = document.getElementById("youtube-url");
-      const url = input.value.trim();
-      if (!url) return;
-
-      // Extract video ID from various YouTube URL formats
-      let videoId = null;
       try {
-        const parsed = new URL(url);
-        if (parsed.hostname.includes("youtu.be")) {
-          videoId = parsed.pathname.slice(1);
-        } else if (parsed.searchParams.has("v")) {
-          videoId = parsed.searchParams.get("v");
+        if (!CONFIG.firebase || !CONFIG.firebase.apiKey) {
+          throw new Error("Firebase not configured");
         }
-      } catch {
-        // Try as plain video ID
-        if (/^[\w-]{11}$/.test(url)) videoId = url;
+        firebase.initializeApp(CONFIG.firebase);
+        db = firebase.database();
+
+        // Connection status
+        db.ref(".info/connected").on("value", function (snap) {
+          if (snap.val() === true) {
+            statusDot.classList.add("connected");
+            statusText.textContent = "Connected";
+          } else {
+            statusDot.classList.remove("connected");
+            statusText.textContent = "Reconnecting...";
+          }
+        });
+
+        // Listen for current state to sync button highlights
+        db.ref("portal/command").on("value", function (snap) {
+          var cmd = snap.val();
+          if (!cmd) return;
+          syncUI(cmd);
+        });
+
+      } catch (err) {
+        statusText.textContent = "Firebase not configured — check config.js";
+        console.error(err);
       }
 
-      if (!videoId) {
-        showToast("Invalid YouTube URL");
-        return;
+      // ── Send Command ───────────────────────────────────
+      function sendCommand(command) {
+        if (!db) {
+          showToast("Firebase not connected");
+          return;
+        }
+        command.timestamp = Date.now();
+        db.ref("portal/command").set(command);
       }
 
-      sendCommand({ action: "play-youtube", videoId });
-      showToast("Sending to Portal...");
-      input.value = "";
-    });
+      // ── Sync UI with current state ─────────────────────
+      function syncUI(cmd) {
+        var btns = document.querySelectorAll(".widget-btn");
+        for (var i = 0; i < btns.length; i++) btns[i].classList.remove("active");
+        document.getElementById("btn-showall").classList.remove("active");
 
-    // ── Quick Actions ──────────────────────────────────
-    document.getElementById("btn-refresh").addEventListener("click", () => {
-      sendCommand({ action: "refresh" });
-      showToast("Refreshing Portal...");
-    });
+        if (cmd.action === "show-widget") {
+          var btn = document.getElementById("btn-" + cmd.widget);
+          if (btn) btn.classList.add("active");
+        } else if (cmd.action === "show-all") {
+          document.getElementById("btn-showall").classList.add("active");
+        }
+      }
 
-    document.getElementById("btn-sleep").addEventListener("click", () => {
-      sendCommand({ action: "sleep" });
-      showToast("Portal sleeping");
-    });
+      // ── Widget Buttons ─────────────────────────────────
+      var widgetBtns = document.querySelectorAll(".widget-btn");
+      for (var i = 0; i < widgetBtns.length; i++) {
+        (function (btn) {
+          btn.addEventListener("click", function () {
+            var widget = btn.getAttribute("data-widget");
+            sendCommand({ action: "show-widget", widget: widget });
+            showToast("Showing " + btn.textContent.trim());
+          });
+        })(widgetBtns[i]);
+      }
 
-    document.getElementById("btn-wake").addEventListener("click", () => {
-      sendCommand({ action: "wake" });
-      showToast("Waking Portal");
-    });
+      document.getElementById("btn-showall").addEventListener("click", function () {
+        sendCommand({ action: "show-all" });
+        showToast("Showing all widgets");
+      });
 
-    // ── Toast ──────────────────────────────────────────
-    let toastTimeout;
-    function showToast(msg) {
-      const toast = document.getElementById("toast");
-      toast.textContent = msg;
-      toast.classList.add("show");
-      clearTimeout(toastTimeout);
-      toastTimeout = setTimeout(() => toast.classList.remove("show"), 2000);
-    }
+      // ── YouTube ────────────────────────────────────────
+      document.getElementById("youtube-send").addEventListener("click", function () {
+        var input = document.getElementById("youtube-url");
+        var url = input.value.trim();
+        if (!url) return;
+
+        var videoId = null;
+        try {
+          var parsed = new URL(url);
+          if (parsed.hostname.indexOf("youtu.be") !== -1) {
+            videoId = parsed.pathname.slice(1);
+          } else if (parsed.searchParams.has("v")) {
+            videoId = parsed.searchParams.get("v");
+          }
+        } catch (e) {
+          if (/^[\w-]{11}$/.test(url)) videoId = url;
+        }
+
+        if (!videoId) {
+          showToast("Invalid YouTube URL");
+          return;
+        }
+
+        sendCommand({ action: "play-youtube", videoId: videoId });
+        showToast("Sending to Portal...");
+        input.value = "";
+      });
+
+      // ── Quick Actions ──────────────────────────────────
+      document.getElementById("btn-refresh").addEventListener("click", function () {
+        sendCommand({ action: "refresh" });
+        showToast("Refreshing Portal...");
+      });
+
+      document.getElementById("btn-sleep").addEventListener("click", function () {
+        sendCommand({ action: "sleep" });
+        showToast("Portal sleeping");
+      });
+
+      document.getElementById("btn-wake").addEventListener("click", function () {
+        sendCommand({ action: "wake" });
+        showToast("Waking Portal");
+      });
+
+      // ── Toast ──────────────────────────────────────────
+      var toastTimeout;
+      function showToast(msg) {
+        var toast = document.getElementById("toast");
+        toast.textContent = msg;
+        toast.classList.add("show");
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(function () { toast.classList.remove("show"); }, 2000);
+      }
+    })();
   </script>
 </body>
 </html>
