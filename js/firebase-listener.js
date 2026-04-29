@@ -18,7 +18,8 @@
 
   var app = firebase.initializeApp(CONFIG.firebase);
   var db = firebase.database();
-  var lastTimestamp = 0;
+  // Ignore any commands from before page load to prevent refresh loops
+  var lastTimestamp = Date.now();
 
   // ── Listen for commands ────────────────────────────────
   db.ref("portal/command").on("value", function (snap) {
@@ -127,6 +128,12 @@
       case "play-youtube":
         playYouTube(cmd.videoId);
         break;
+      case "play-youtube-playlist":
+        playYouTubePlaylist(cmd.listId, cmd.videoId);
+        break;
+      case "stop-youtube":
+        hideYouTube();
+        break;
       case "refresh":
         window.location.reload();
         break;
@@ -184,6 +191,29 @@
 
     container.innerHTML = '<iframe ' +
       'src="https://www.youtube.com/embed/' + videoId + '?autoplay=1&rel=0&modestbranding=1" ' +
+      'frameborder="0" ' +
+      'allow="autoplay; encrypted-media; fullscreen" ' +
+      'allowfullscreen></iframe>';
+
+    overlay.classList.remove("hidden");
+  }
+
+  function playYouTubePlaylist(listId, videoId) {
+    hideSleep();
+
+    var overlay = document.getElementById("youtube-overlay");
+    var container = document.getElementById("youtube-container");
+
+    // If we have both a video ID and playlist, start at that video
+    var src = "https://www.youtube.com/embed/";
+    if (videoId) {
+      src += videoId + "?autoplay=1&rel=0&modestbranding=1&list=" + listId;
+    } else {
+      src += "?listType=playlist&list=" + listId + "&autoplay=1&rel=0&modestbranding=1";
+    }
+
+    container.innerHTML = '<iframe ' +
+      'src="' + src + '" ' +
       'frameborder="0" ' +
       'allow="autoplay; encrypted-media; fullscreen" ' +
       'allowfullscreen></iframe>';
