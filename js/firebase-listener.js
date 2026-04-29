@@ -6,6 +6,10 @@
 (function () {
   "use strict";
 
+  console.log("CONFIG check:", window.CONFIG ? "exists" : "missing");
+  console.log("CONFIG.firebase:", window.CONFIG && CONFIG.firebase);
+  console.log("firebase SDK:", window.firebase ? "loaded" : "missing");
+
   if (!window.CONFIG || !CONFIG.firebase || !CONFIG.firebase.apiKey) {
     console.log("Firebase not configured — remote control disabled");
     return;
