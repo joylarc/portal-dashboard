@@ -674,7 +674,7 @@
                 btn.className = "recipe-item";
                 btn.textContent = recipe.name;
                 btn.addEventListener("click", function () {
-                  sendCommand({ action: "show-recipe", url: recipe.url });
+                  sendCommand({ action: "show-recipe", url: CONFIG.recipesApiUrl + "?id=" + recipe.id });
                   recipeCloseBtn.style.display = "";
                   showToast("Showing " + recipe.name);
                 });
