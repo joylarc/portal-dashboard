@@ -448,6 +448,20 @@
           html += '<div class="todo-checkbox"></div>';
           html += '<span class="todo-text">' + escapeHtml(t.text) + '</span>';
           html += '</div>';
+
+          // Sub-tasks
+          if (t.subtasks) {
+            var subKeys = Object.keys(t.subtasks);
+            for (var si = 0; si < subKeys.length; si++) {
+              var sub = t.subtasks[subKeys[si]];
+              if (!sub) continue;
+              var subCompleted = sub.completed ? " completed" : "";
+              html += '<div class="todo-item todo-subtask-portal' + subCompleted + '" data-todo-key="' + t._key + '" data-sub-key="' + subKeys[si] + '">';
+              html += '<div class="todo-checkbox"></div>';
+              html += '<span class="todo-text">' + escapeHtml(sub.text) + '</span>';
+              html += '</div>';
+            }
+          }
         }
         html += '</div>';
       }
@@ -464,9 +478,13 @@
         (function (item) {
           item.addEventListener("click", function () {
             var key = item.getAttribute("data-todo-key");
+            var subKey = item.getAttribute("data-sub-key");
             var isCompleted = item.classList.contains("completed");
-            db.ref("portal/todos/" + key + "/completed").set(!isCompleted);
-            // Re-render after a short delay
+            if (subKey) {
+              db.ref("portal/todos/" + key + "/subtasks/" + subKey + "/completed").set(!isCompleted);
+            } else {
+              db.ref("portal/todos/" + key + "/completed").set(!isCompleted);
+            }
             setTimeout(renderTodos, 300);
           });
         })(items[ii]);

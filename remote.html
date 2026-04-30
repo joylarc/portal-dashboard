@@ -341,6 +341,39 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    .todo-remote-text {
+      flex: 1;
+      cursor: pointer;
+    }
+
+    .todo-subtask-container {
+      margin-left: 28px;
+      margin-bottom: 6px;
+    }
+
+    .todo-subtask-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      margin-bottom: 2px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 6px;
+      font-size: 0.78rem;
+      color: var(--text);
+    }
+
+    .todo-subtask-item.done {
+      opacity: 0.5;
+      text-decoration: line-through;
+    }
+
+    .todo-subtask-add {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
     .todo-cat-badge {
       font-size: 0.65rem;
       padding: 1px 6px;
@@ -718,14 +751,15 @@
       });
 
       // ── To-Do ─────────────────────────────────────────
+      var expandedTodo = null;
+
       function renderRemoteTodos(todos) {
         var list = document.getElementById("todo-remote-list");
         list.innerHTML = "";
         if (!todos) return;
         var keys = Object.keys(todos);
-        // Sort: incomplete first, then by priority
         var priorityOrder = { high: 0, medium: 1, low: 2 };
-        var sorted = keys.map(function (k) { var t = todos[k]; t._key = k; return t; }).filter(function (t) { return t; });
+        var sorted = keys.map(function (k) { var t = todos[k]; if (t) t._key = k; return t; }).filter(function (t) { return t; });
         sorted.sort(function (a, b) {
           if (a.completed !== b.completed) return a.completed ? 1 : -1;
           var pa = priorityOrder[a.priority || "low"] || 2;
@@ -735,33 +769,120 @@
 
         for (var i = 0; i < sorted.length; i++) {
           (function (todo) {
+            var wrapper = document.createElement("div");
+            wrapper.className = "todo-remote-wrapper";
+
+            // Main task row
             var div = document.createElement("div");
             div.className = "todo-remote-item" + (todo.completed ? " done" : "");
             var priBorder = todo.priority === "high" ? "border-left:3px solid #ef4444;" : (todo.priority === "medium" ? "border-left:3px solid #fbbf24;" : "");
             div.style.cssText = priBorder;
+
+            var subtaskCount = todo.subtasks ? Object.keys(todo.subtasks).length : 0;
+            var subtaskDone = 0;
+            if (todo.subtasks) {
+              var sk = Object.keys(todo.subtasks);
+              for (var si = 0; si < sk.length; si++) {
+                if (todo.subtasks[sk[si]] && todo.subtasks[sk[si]].completed) subtaskDone++;
+              }
+            }
+            var subtaskBadge = subtaskCount > 0 ? ' <span style="font-size:0.65rem;color:var(--text-muted);">' + subtaskDone + '/' + subtaskCount + '</span>' : "";
+
             div.innerHTML = '<button class="todo-remote-check">' + (todo.completed ? "\u2713" : "") + '</button>' +
               '<span class="todo-cat-badge cat-' + (todo.category || "other").toLowerCase() + '">' + (todo.category || "Other") + '</span> ' +
-              '<span>' + escapeHtml(todo.text) + '</span>' +
+              '<span class="todo-remote-text">' + escapeHtml(todo.text) + subtaskBadge + '</span>' +
               '<button class="todo-remote-delete">Del</button>';
 
-            div.querySelector(".todo-remote-check").addEventListener("click", function () {
+            div.querySelector(".todo-remote-check").addEventListener("click", function (e) {
+              e.stopPropagation();
               db.ref("portal/todos/" + todo._key + "/completed").set(!todo.completed);
             });
-            div.querySelector(".todo-remote-delete").addEventListener("click", function () {
+            div.querySelector(".todo-remote-delete").addEventListener("click", function (e) {
+              e.stopPropagation();
               db.ref("portal/todos/" + todo._key).remove();
               showToast("Task deleted");
             });
-            list.appendChild(div);
+
+            // Tap task text to expand/collapse
+            div.querySelector(".todo-remote-text").addEventListener("click", function (e) {
+              e.stopPropagation();
+              expandedTodo = (expandedTodo === todo._key) ? null : todo._key;
+              renderRemoteTodos(lastTodos);
+            });
+
+            wrapper.appendChild(div);
+
+            // Expanded: show sub-tasks + add field
+            if (expandedTodo === todo._key) {
+              var subContainer = document.createElement("div");
+              subContainer.className = "todo-subtask-container";
+
+              // Existing sub-tasks
+              if (todo.subtasks) {
+                var subKeys = Object.keys(todo.subtasks);
+                for (var sj = 0; sj < subKeys.length; sj++) {
+                  (function (subKey, sub) {
+                    var subDiv = document.createElement("div");
+                    subDiv.className = "todo-subtask-item" + (sub.completed ? " done" : "");
+                    subDiv.innerHTML = '<button class="todo-remote-check" style="width:16px;height:16px;font-size:10px;">' + (sub.completed ? "\u2713" : "") + '</button>' +
+                      '<span>' + escapeHtml(sub.text) + '</span>' +
+                      '<button class="todo-remote-delete" style="font-size:0.65rem;">Del</button>';
+
+                    subDiv.querySelector(".todo-remote-check").addEventListener("click", function () {
+                      db.ref("portal/todos/" + todo._key + "/subtasks/" + subKey + "/completed").set(!sub.completed);
+                    });
+                    subDiv.querySelector(".todo-remote-delete").addEventListener("click", function () {
+                      db.ref("portal/todos/" + todo._key + "/subtasks/" + subKey).remove();
+                      showToast("Sub-task deleted");
+                    });
+                    subContainer.appendChild(subDiv);
+                  })(subKeys[sj], todo.subtasks[subKeys[sj]]);
+                }
+              }
+
+              // Add sub-task input
+              var addRow = document.createElement("div");
+              addRow.className = "todo-subtask-add";
+              addRow.innerHTML = '<input type="text" class="url-input" placeholder="Add sub-task..." style="flex:1;padding:8px 10px;font-size:0.8rem;">' +
+                '<button class="send-btn" style="padding:8px 12px;font-size:0.75rem;">Add</button>';
+
+              var subInput = addRow.querySelector("input");
+              var subBtn = addRow.querySelector("button");
+
+              function addSubtask() {
+                var text = subInput.value.trim();
+                if (!text) return;
+                var subKey = db.ref("portal/todos/" + todo._key + "/subtasks").push().key;
+                db.ref("portal/todos/" + todo._key + "/subtasks/" + subKey).set({
+                  text: text,
+                  completed: false
+                });
+                subInput.value = "";
+              }
+
+              subBtn.addEventListener("click", addSubtask);
+              subInput.addEventListener("keydown", function (e) {
+                if (e.key === "Enter") addSubtask();
+              });
+
+              subContainer.appendChild(addRow);
+              wrapper.appendChild(subContainer);
+            }
+
+            list.appendChild(wrapper);
           })(sorted[i]);
         }
       }
+
+      var lastTodos = null;
 
       function escapeHtml(str) {
         return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       }
 
       db.ref("portal/todos").on("value", function (snap) {
-        renderRemoteTodos(snap.val());
+        lastTodos = snap.val();
+        renderRemoteTodos(lastTodos);
       }, function () {});
 
       document.getElementById("todo-add").addEventListener("click", function () {

@@ -655,6 +655,17 @@ html, body {
   color: var(--text-dim);
 }
 
+.todo-subtask-portal {
+  margin-left: 36px;
+  font-size: clamp(0.9rem, 1.6vw, 1.2rem);
+}
+
+.todo-subtask-portal .todo-checkbox {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+}
+
 .todo-priority-high { border-left: 3px solid #ef4444; }
 .todo-priority-medium { border-left: 3px solid #fbbf24; }
 .todo-priority-low { border-left: 3px solid transparent; }
