@@ -146,6 +146,24 @@
       case "hide-notes":
         hideNotes();
         break;
+      case "show-weather":
+        showWeather();
+        break;
+      case "hide-weather":
+        hideWeather();
+        break;
+      case "show-todos":
+        showTodos();
+        break;
+      case "hide-todos":
+        hideTodos();
+        break;
+      case "show-calendar":
+        showCalendar();
+        break;
+      case "hide-calendar":
+        hideCalendar();
+        break;
       case "refresh":
         window.location.reload();
         break;
@@ -157,6 +175,9 @@
         hideYouTube();
         hideRecipe();
         hideNotes();
+        hideWeather();
+        hideTodos();
+        hideCalendar();
         hideAlarm();
         showAllWidgets();
         break;
@@ -300,6 +321,212 @@
     var container = document.getElementById("recipe-container");
     overlay.classList.add("hidden");
     container.innerHTML = "";
+  }
+
+  // ── Weather ──────────────────────────────────────────
+  function showWeather() {
+    hideSleep(); hideYouTube(); hideRecipe(); hideNotes(); hideTodos(); hideCalendar();
+
+    var overlay = document.getElementById("weather-overlay");
+    var display = document.getElementById("weather-display");
+    display.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-size:1.5rem;">Loading weather...</div>';
+    overlay.classList.remove("hidden");
+
+    // NYC coordinates
+    var lat = 40.7128;
+    var lon = -74.0060;
+    var url = "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
+      "&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m" +
+      "&daily=weather_code,temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit" +
+      "&wind_speed_unit=mph&timezone=America/New_York&forecast_days=7";
+
+    fetch(url).then(function (r) { return r.json(); }).then(function (data) {
+      var current = data.current;
+      var daily = data.daily;
+      var weatherDesc = getWeatherDescription(current.weather_code);
+
+      var html = '<div class="weather-current">';
+      html += '<div class="weather-temp">' + Math.round(current.temperature_2m) + '&deg;</div>';
+      html += '<div><div class="weather-info">' + weatherDesc + '</div>';
+      html += '<div class="weather-detail">Feels like ' + Math.round(current.apparent_temperature) + '&deg; &bull; ';
+      html += 'Wind ' + Math.round(current.wind_speed_10m) + ' mph &bull; ';
+      html += 'Humidity ' + current.relative_humidity_2m + '%</div></div>';
+      html += '</div>';
+
+      html += '<div class="weather-forecast">';
+      var dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      for (var i = 0; i < daily.time.length; i++) {
+        var d = new Date(daily.time[i] + "T12:00:00");
+        var dayName = i === 0 ? "Today" : dayNames[d.getDay()];
+        html += '<div class="weather-day">';
+        html += '<div class="weather-day-name">' + dayName + '</div>';
+        html += '<div class="weather-day-temp">' + Math.round(daily.temperature_2m_max[i]) + '&deg;</div>';
+        html += '<div class="weather-day-low">' + Math.round(daily.temperature_2m_min[i]) + '&deg;</div>';
+        html += '<div class="weather-day-desc">' + getWeatherDescription(daily.weather_code[i]) + '</div>';
+        html += '</div>';
+      }
+      html += '</div>';
+
+      display.innerHTML = html;
+    }).catch(function () {
+      display.innerHTML = '<div style="text-align:center;color:var(--red);font-size:1.5rem;">Failed to load weather</div>';
+    });
+  }
+
+  function getWeatherDescription(code) {
+    var descriptions = {
+      0: "Clear", 1: "Mostly Clear", 2: "Partly Cloudy", 3: "Overcast",
+      45: "Foggy", 48: "Icy Fog", 51: "Light Drizzle", 53: "Drizzle", 55: "Heavy Drizzle",
+      61: "Light Rain", 63: "Rain", 65: "Heavy Rain",
+      66: "Freezing Rain", 67: "Heavy Freezing Rain",
+      71: "Light Snow", 73: "Snow", 75: "Heavy Snow", 77: "Snow Grains",
+      80: "Light Showers", 81: "Showers", 82: "Heavy Showers",
+      85: "Snow Showers", 86: "Heavy Snow Showers",
+      95: "Thunderstorm", 96: "Thunderstorm w/ Hail", 99: "Severe Thunderstorm"
+    };
+    return descriptions[code] || "Unknown";
+  }
+
+  function hideWeather() {
+    document.getElementById("weather-overlay").classList.add("hidden");
+  }
+
+  // ── To-Do List ──────────────────────────────────────
+  function showTodos() {
+    hideSleep(); hideYouTube(); hideRecipe(); hideNotes(); hideWeather(); hideCalendar();
+    document.getElementById("todos-overlay").classList.remove("hidden");
+    renderTodos();
+  }
+
+  function hideTodos() {
+    document.getElementById("todos-overlay").classList.add("hidden");
+  }
+
+  function renderTodos() {
+    db.ref("portal/todos").once("value", function (snap) {
+      var todos = snap.val() || {};
+      var display = document.getElementById("todos-display");
+
+      // Group by category, sort by priority then creation
+      var categories = {};
+      var keys = Object.keys(todos);
+      for (var i = 0; i < keys.length; i++) {
+        var todo = todos[keys[i]];
+        if (!todo) continue;
+        todo._key = keys[i];
+        var cat = todo.category || "Other";
+        if (!categories[cat]) categories[cat] = [];
+        categories[cat].push(todo);
+      }
+
+      // Sort within categories: incomplete first, then by priority
+      var priorityOrder = { high: 0, medium: 1, low: 2 };
+      for (var c in categories) {
+        categories[c].sort(function (a, b) {
+          if (a.completed !== b.completed) return a.completed ? 1 : -1;
+          var pa = priorityOrder[a.priority || "low"] || 2;
+          var pb = priorityOrder[b.priority || "low"] || 2;
+          return pa - pb;
+        });
+      }
+
+      var catOrder = ["Work", "Home", "Groceries", "Errands", "Other"];
+      var html = '<div class="todos-header">To-Do</div>';
+
+      for (var ci = 0; ci < catOrder.length; ci++) {
+        var catName = catOrder[ci];
+        if (!categories[catName] || categories[catName].length === 0) continue;
+
+        html += '<div class="todo-category-group">';
+        html += '<div class="todo-category-label cat-' + catName.toLowerCase() + '">' + catName + '</div>';
+
+        for (var ti = 0; ti < categories[catName].length; ti++) {
+          var t = categories[catName][ti];
+          var completedClass = t.completed ? " completed" : "";
+          var priorityClass = " todo-priority-" + (t.priority || "low");
+          html += '<div class="todo-item' + completedClass + priorityClass + '" data-todo-key="' + t._key + '">';
+          html += '<div class="todo-checkbox"></div>';
+          html += '<span class="todo-text">' + escapeHtml(t.text) + '</span>';
+          html += '</div>';
+        }
+        html += '</div>';
+      }
+
+      if (keys.length === 0) {
+        html += '<div style="text-align:center;color:var(--text-dim);font-size:1.3rem;margin-top:40px;">No tasks yet. Add some from the remote!</div>';
+      }
+
+      display.innerHTML = html;
+
+      // Tap to toggle completion on Portal
+      var items = display.querySelectorAll(".todo-item");
+      for (var ii = 0; ii < items.length; ii++) {
+        (function (item) {
+          item.addEventListener("click", function () {
+            var key = item.getAttribute("data-todo-key");
+            var isCompleted = item.classList.contains("completed");
+            db.ref("portal/todos/" + key + "/completed").set(!isCompleted);
+            // Re-render after a short delay
+            setTimeout(renderTodos, 300);
+          });
+        })(items[ii]);
+      }
+    });
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // Listen for to-do changes to re-render if overlay is open
+  db.ref("portal/todos").on("value", function () {
+    var overlay = document.getElementById("todos-overlay");
+    if (!overlay.classList.contains("hidden")) {
+      renderTodos();
+    }
+  }, function () {});
+
+  // ── Calendar Overlay ────────────────────────────────
+  function showCalendar() {
+    hideSleep(); hideYouTube(); hideRecipe(); hideNotes(); hideWeather(); hideTodos();
+
+    var overlay = document.getElementById("calendar-overlay");
+    var display = document.getElementById("calendar-display");
+
+    if (typeof CONFIG !== "undefined" && CONFIG.googleCalendarUrl) {
+      var url = CONFIG.googleCalendarUrl;
+      if (!url.includes("bgcolor")) {
+        var sep = url.includes("?") ? "&" : "?";
+        url += sep + "bgcolor=%230f0f1a&color=%236366f1&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0&showTz=1&mode=AGENDA";
+      }
+      display.innerHTML = '<iframe src="' + url + '"></iframe>';
+    } else {
+      display.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-dim);font-size:1.3rem;">Set googleCalendarUrl in config.js</div>';
+    }
+    overlay.classList.remove("hidden");
+  }
+
+  function hideCalendar() {
+    document.getElementById("calendar-overlay").classList.add("hidden");
+    document.getElementById("calendar-display").innerHTML = "";
+  }
+
+  // ── App Drawer Tap Handling ─────────────────────────
+  var appIcons = document.querySelectorAll(".app-icon");
+  for (var ai = 0; ai < appIcons.length; ai++) {
+    (function (icon) {
+      icon.addEventListener("click", function () {
+        var app = icon.getAttribute("data-app");
+        switch (app) {
+          case "weather": showWeather(); break;
+          case "todos": showTodos(); break;
+          case "calendar": showCalendar(); break;
+          case "recipes": break; // handled via remote
+          case "youtube": break; // handled via remote
+          case "notes": break; // handled via remote
+        }
+      });
+    })(appIcons[ai]);
   }
 
   // ── Alarm ────────────────────────────────────────────

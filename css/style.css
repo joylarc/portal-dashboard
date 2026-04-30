@@ -435,41 +435,249 @@ html, body {
   font-size: 0.8rem;
 }
 
-/* ── Calendar Widget ──────────────────────────────────── */
-.calendar-content {
-  padding: 0;
-}
-
-.calendar-container {
-  width: 100%;
-  height: 100%;
+/* ── Apps Widget ──────────────────────────────────────── */
+.apps-content {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.calendar-container iframe {
+.apps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
   width: 100%;
-  height: 100%;
-  border: none;
-  border-radius: var(--radius);
 }
 
-.calendar-placeholder {
+.app-icon {
+  background: rgba(255,255,255,0.05);
+  border: none;
+  border-radius: 12px;
+  padding: 12px 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  color: var(--text-dim);
-  text-align: center;
-  padding: 20px;
+  gap: 6px;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.calendar-placeholder code {
-  background: rgba(255,255,255,0.08);
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.85em;
+.app-icon:active {
+  transform: scale(0.95);
+  background: rgba(255,255,255,0.1);
+}
+
+.app-icon span {
+  font-size: clamp(0.6rem, 1vw, 0.75rem);
+  font-weight: 500;
+}
+
+.app-icon svg {
+  opacity: 0.7;
+}
+
+/* ── Weather Overlay ─────────────────────────────────── */
+.weather-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.weather-overlay.hidden { display: none; }
+
+.weather-display {
+  max-width: 900px;
+  width: 100%;
+  color: var(--text-primary);
+}
+
+.weather-current {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.weather-temp {
+  font-size: clamp(5rem, 12vw, 10rem);
+  font-weight: 700;
+  line-height: 1;
+  background: linear-gradient(135deg, #e8e8f0 0%, #a0a0cc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.weather-info {
+  font-size: clamp(1.2rem, 2.5vw, 2rem);
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.weather-detail {
+  font-size: clamp(0.9rem, 1.5vw, 1.2rem);
+  color: var(--text-dim);
+}
+
+.weather-forecast {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.weather-day {
+  background: var(--bg-widget);
+  border-radius: 12px;
+  padding: 16px 12px;
+  text-align: center;
+}
+
+.weather-day-name {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.weather-day-temp {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.weather-day-low {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+.weather-day-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+/* ── To-Do Overlay ───────────────────────────────────── */
+.todos-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: var(--bg-primary);
+  padding: 30px 40px;
+  overflow-y: auto;
+}
+
+.todos-overlay.hidden { display: none; }
+
+.todos-display {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.todos-header {
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+
+.todo-category-group {
+  margin-bottom: 20px;
+}
+
+.todo-category-label {
+  font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.todo-category-label.cat-groceries { color: #4ade80; border-color: #4ade80; }
+.todo-category-label.cat-work { color: #60a5fa; border-color: #60a5fa; }
+.todo-category-label.cat-home { color: #fbbf24; border-color: #fbbf24; }
+.todo-category-label.cat-errands { color: #fb923c; border-color: #fb923c; }
+.todo-category-label.cat-other { color: #a78bfa; border-color: #a78bfa; }
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  margin-bottom: 4px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  font-size: clamp(1.1rem, 2vw, 1.5rem);
+  color: var(--text-primary);
+}
+
+.todo-item:active {
+  background: rgba(255,255,255,0.05);
+}
+
+.todo-checkbox {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2px solid var(--text-dim);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.todo-item.completed .todo-checkbox {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.todo-item.completed .todo-checkbox::after {
+  content: "\2713";
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.todo-item.completed .todo-text {
+  text-decoration: line-through;
+  color: var(--text-dim);
+}
+
+.todo-priority-high { border-left: 3px solid #ef4444; }
+.todo-priority-medium { border-left: 3px solid #fbbf24; }
+.todo-priority-low { border-left: 3px solid transparent; }
+
+/* ── Calendar Overlay ────────────────────────────────── */
+.calendar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: var(--bg-primary);
+}
+
+.calendar-overlay.hidden { display: none; }
+
+.calendar-display {
+  width: 100%;
+  height: 100%;
+}
+
+.calendar-display iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
 }
 
 /* ── Scrollbar hiding for clean look ──────────────────── */
