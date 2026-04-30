@@ -521,12 +521,66 @@
           case "weather": showWeather(); break;
           case "todos": showTodos(); break;
           case "calendar": showCalendar(); break;
-          case "recipes": break; // handled via remote
-          case "youtube": break; // handled via remote
-          case "notes": break; // handled via remote
+          case "recipes": showLastRecipe(); break;
+          case "youtube": showYouTubePrompt(); break;
+          case "notes": showLastNotes(); break;
         }
       });
     })(appIcons[ai]);
+  }
+
+  function showLastRecipe() {
+    // Show the recipe list info - actual recipe selection happens from remote
+    hideSleep(); hideYouTube(); hideNotes(); hideWeather(); hideTodos(); hideCalendar();
+    var overlay = document.getElementById("recipe-overlay");
+    var container = document.getElementById("recipe-container");
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-dim);font-size:1.5rem;">Select a recipe from the remote</div>';
+    overlay.classList.remove("hidden");
+  }
+
+  function showYouTubePrompt() {
+    hideSleep(); hideRecipe(); hideNotes(); hideWeather(); hideTodos(); hideCalendar();
+    var overlay = document.getElementById("youtube-overlay");
+    var container = document.getElementById("youtube-container");
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-dim);font-size:1.5rem;background:#000;">Send a video from the remote</div>';
+    overlay.classList.remove("hidden");
+  }
+
+  function showLastNotes() {
+    // Show notes if there's existing content in Firebase
+    hideSleep(); hideYouTube(); hideRecipe(); hideWeather(); hideTodos(); hideCalendar();
+    db.ref("portal/notes").once("value", function (snap) {
+      var data = snap.val();
+      var overlay = document.getElementById("notes-overlay");
+      var display = document.getElementById("notes-display");
+      if (data && data.html) {
+        display.innerHTML = data.html;
+      } else {
+        display.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-size:1.5rem;">Add notes from the remote</div>';
+      }
+      overlay.classList.remove("hidden");
+    });
+  }
+
+  // ── Back Button Handling ────────────────────────────
+  var backBtns = document.querySelectorAll(".overlay-back-btn");
+  for (var bi = 0; bi < backBtns.length; bi++) {
+    (function (btn) {
+      btn.addEventListener("click", function () {
+        var overlayId = btn.getAttribute("data-close");
+        var overlay = document.getElementById(overlayId);
+        if (overlay) {
+          overlay.classList.add("hidden");
+          // Clean up YouTube if closing that overlay
+          if (overlayId === "youtube-overlay") {
+            document.getElementById("youtube-container").innerHTML = "";
+          }
+          if (overlayId === "calendar-overlay") {
+            document.getElementById("calendar-display").innerHTML = "";
+          }
+        }
+      });
+    })(backBtns[bi]);
   }
 
   // ── Alarm ────────────────────────────────────────────
