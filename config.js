@@ -12,6 +12,9 @@ const CONFIG = {
     // "https://example.com/photo.jpg",
   ],
 
+  // Cloudflare Worker URL that fetches photos from Google Photos album
+  photosApiUrl: "",
+
   // How long each photo displays (in seconds)
   photoInterval: 30,
 

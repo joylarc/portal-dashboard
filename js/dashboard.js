@@ -50,10 +50,28 @@
   let currentPhoto = 0;
   let photoImages = [];
 
-  function initPhotos() {
+  async function initPhotos() {
     const container = document.getElementById("photo-container");
     const dotsContainer = document.getElementById("photo-dots");
-    const photos = CONFIG.photos || [];
+    let photos = CONFIG.photos || [];
+
+    // Fetch from Google Photos worker if configured
+    if (photos.length === 0 && CONFIG.photosApiUrl) {
+      try {
+        const resp = await fetch(CONFIG.photosApiUrl);
+        const data = await resp.json();
+        if (data.photos && data.photos.length > 0) {
+          photos = data.photos;
+          // Shuffle so it's not the same order every time
+          for (let i = photos.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const tmp = photos[i]; photos[i] = photos[j]; photos[j] = tmp;
+          }
+        }
+      } catch (err) {
+        console.error("Photos fetch error:", err);
+      }
+    }
 
     if (photos.length === 0) return;
 
@@ -61,20 +79,31 @@
     container.innerHTML = "";
     dotsContainer.innerHTML = "";
 
-    // Create image elements
+    // Hide dots if too many photos
+    if (photos.length > 20) {
+      dotsContainer.style.display = "none";
+    }
+
+    // Create image elements — only preload first few, lazy-load rest
     photos.forEach((src, i) => {
       const img = document.createElement("img");
-      img.src = src;
       img.alt = `Photo ${i + 1}`;
-      img.loading = i < 2 ? "eager" : "lazy";
+      if (i < 3) {
+        img.src = src;
+      } else {
+        img.dataset.src = src;
+      }
+      img.loading = i < 3 ? "eager" : "lazy";
       if (i === 0) img.classList.add("active");
       container.appendChild(img);
       photoImages.push(img);
 
-      // Dot indicator
-      const dot = document.createElement("div");
-      dot.className = `photo-dot${i === 0 ? " active" : ""}`;
-      dotsContainer.appendChild(dot);
+      // Dot indicator (only for small sets)
+      if (photos.length <= 20) {
+        const dot = document.createElement("div");
+        dot.className = `photo-dot${i === 0 ? " active" : ""}`;
+        dotsContainer.appendChild(dot);
+      }
     });
 
     // Set transition duration from config
@@ -98,7 +127,19 @@
 
     currentPhoto = (currentPhoto + 1) % photoImages.length;
 
-    photoImages[currentPhoto].classList.add("active");
+    // Lazy-load: set src from data-src if not yet loaded
+    const nextImg = photoImages[currentPhoto];
+    if (!nextImg.src && nextImg.dataset.src) {
+      nextImg.src = nextImg.dataset.src;
+    }
+    // Also preload the one after
+    const preloadIdx = (currentPhoto + 1) % photoImages.length;
+    const preloadImg = photoImages[preloadIdx];
+    if (!preloadImg.src && preloadImg.dataset.src) {
+      preloadImg.src = preloadImg.dataset.src;
+    }
+
+    nextImg.classList.add("active");
     if (dots[currentPhoto]) dots[currentPhoto].classList.add("active");
   }
 
