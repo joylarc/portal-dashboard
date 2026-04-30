@@ -326,6 +326,59 @@
     });
   }
 
+  // ── Keep Awake (prevent Portal from sleeping) ───────
+  // Uses a hidden silent video loop to prevent screen timeout.
+  // Also tries Wake Lock API for modern browsers.
+  let keepAwakeVideo = null;
+  let wakeLock = null;
+
+  function enableKeepAwake() {
+    // Try Wake Lock API first (modern browsers)
+    if ("wakeLock" in navigator) {
+      navigator.wakeLock.request("screen").then(function (lock) {
+        wakeLock = lock;
+        console.log("Wake Lock active");
+        // Re-acquire if released (e.g. tab switch)
+        lock.addEventListener("release", function () {
+          console.log("Wake Lock released, re-acquiring...");
+          enableKeepAwake();
+        });
+      }).catch(function () {
+        console.log("Wake Lock failed, using video fallback");
+      });
+    }
+
+    // Video fallback — works on older Android browsers like Portal
+    if (!keepAwakeVideo) {
+      keepAwakeVideo = document.createElement("video");
+      keepAwakeVideo.setAttribute("playsinline", "");
+      keepAwakeVideo.setAttribute("muted", "");
+      keepAwakeVideo.muted = true;
+      keepAwakeVideo.loop = true;
+      keepAwakeVideo.style.position = "fixed";
+      keepAwakeVideo.style.top = "-1px";
+      keepAwakeVideo.style.left = "-1px";
+      keepAwakeVideo.style.width = "1px";
+      keepAwakeVideo.style.height = "1px";
+      keepAwakeVideo.style.opacity = "0.01";
+      keepAwakeVideo.style.pointerEvents = "none";
+      keepAwakeVideo.style.zIndex = "-1";
+
+      // Tiny silent MP4 with audio track (base64 from NoSleep.js)
+      var source = document.createElement("source");
+      source.src = "data:video/mp4;base64,AAAAHGZ0eXBNNFYgAAACAGlzb21pc28yYXZjMQAAAAhmcmVlAAAGF21kYXTeBAAAbGliZmFhYyAxLjI4AABCAJMgBDIARwAAArEGBf//qtxF6b3m2Ui3lizYINkj7u94MjY0IC0gY29yZSAxNDIgcjIgOTU2YzhkOCAtIEguMjY0L01QRUctNCBBVkMgY29kZWMgLSBDb3B5bGVmdCAyMDAzLTIwMTQgLSBodHRwOi8vd3d3LnZpZGVvbGFuLm9yZy94MjY0Lmh0bWwgLSBvcHRpb25zOiBjYWJhYz0wIHJlZj0zIGRlYmxvY2s9MTowOjAgYW5hbHlzZT0weDE6MHgxMTEgbWU9aGV4IHN1Ym1lPTcgcHN5PTEgcHN5X3JkPTEuMDA6MC4wMCBtaXhlZF9yZWY9MSBtZV9yYW5nZT0xNiBjaHJvbWFfbWU9MSB0cmVsbGlzPTEgOHg4ZGN0PTAgY3FtPTAgZGVhZHpvbmU9MjEsMTEgZmFzdF9wc2tpcD0xIGNocm9tYV9xcF9vZmZzZXQ9LTIgdGhyZWFkcz02IGxvb2thaGVhZF90aHJlYWRzPTEgc2xpY2VkX3RocmVhZHM9MCBucj0wIGRlY2ltYXRlPTEgaW50ZXJsYWNlZD0wIGJsdXJheV9jb21wYXQ9MCBjb25zdHJhaW5lZF9pbnRyYT0wIGJmcmFtZXM9MCB3ZWlnaHRwPTAga2V5aW50PTI1MCBrZXlpbnRfbWluPTI1IHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCB2YnZfbWF4cmF0ZT03NjggdmJ2X2J1ZnNpemU9MzAwMCBjcmZfbWF4PTAuMCBuYWxfaHJkPW5vbmUgZmlsbGVyPTAgaXBfcmF0aW89MS40MCBhcT0xOjEuMDAAgAAAAFZliIQL8mKAAKvMnJycnJycnJycnXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXiEASZACGQAjgCEASZACGQAjgAAAA1teleKAAAAAAAAAAAAAAAAAAAFBM0GBgAAABVqJBALoMflgAAAHdAwQ8CuVAAAAAkJaOOALEiw5IAAAAABYyuAAdQAAAAPaDQNQABGRgACOAK4AAAAACYoUAAnIAAAAAtQ4ABHAFcAAAAAEgB0AAAAAAO4EAAAAANvgAAAAAJPgAAAAAAUAAAA8AAAPy0lBQWTkAALpgAAFs0lBQWTkAALpgAAFs";
+      source.type = "video/mp4";
+      keepAwakeVideo.appendChild(source);
+      document.body.appendChild(keepAwakeVideo);
+    }
+
+    keepAwakeVideo.play().then(function () {
+      console.log("Keep-awake video playing");
+    }).catch(function (err) {
+      console.log("Keep-awake video failed:", err.message);
+    });
+  }
+
   // ── Browser Fullscreen (hides URL bar) ──────────────
   function initBrowserFullscreen() {
     const btn = document.getElementById("browser-fullscreen-btn");
@@ -340,6 +393,8 @@
       if (rfs) {
         rfs.call(el);
       }
+      // Start keep-awake on this user gesture
+      enableKeepAwake();
     });
 
     // Hide button once we're in fullscreen
@@ -378,6 +433,15 @@
 
     // Browser fullscreen (hides URL bar)
     initBrowserFullscreen();
+
+    // Also try keep-awake on any first touch (in case fullscreen button isn't used)
+    var keepAwakeStarted = false;
+    document.addEventListener("click", function () {
+      if (!keepAwakeStarted) {
+        keepAwakeStarted = true;
+        enableKeepAwake();
+      }
+    }, { once: true });
   }
 
   // Start when DOM is ready
