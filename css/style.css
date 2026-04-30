@@ -309,7 +309,7 @@ html, body {
 }
 
 .mta-station-name {
-  font-size: clamp(0.75rem, 1.2vw, 0.88rem);
+  font-size: clamp(0.85rem, 1.5vw, 1.05rem);
   font-weight: 600;
   color: var(--text-secondary);
   padding-bottom: 4px;
@@ -324,7 +324,7 @@ html, body {
 }
 
 .mta-col-header {
-  font-size: clamp(0.65rem, 1vw, 0.75rem);
+  font-size: clamp(0.7rem, 1.1vw, 0.85rem);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -337,9 +337,9 @@ html, body {
 .mta-dep-row {
   display: flex;
   align-items: center;
-  padding: 2px 0;
+  padding: 3px 0;
   gap: 6px;
-  font-size: clamp(0.7rem, 1.1vw, 0.85rem);
+  font-size: clamp(0.8rem, 1.3vw, 1rem);
   font-variant-numeric: tabular-nums;
 }
 
@@ -352,14 +352,14 @@ html, body {
 }
 
 .mta-line-badge {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   color: white;
   flex-shrink: 0;
 }
@@ -517,6 +517,63 @@ html, body {
   height: 100%;
   border: none;
 }
+
+/* ── Notes Overlay ───────────────────────────────────── */
+.notes-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.notes-overlay.hidden {
+  display: none;
+}
+
+.notes-display {
+  max-width: 900px;
+  width: 100%;
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.notes-display ul {
+  list-style: none;
+  padding: 0;
+}
+
+.notes-display ul li {
+  padding: 6px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.notes-display ul li::before {
+  content: "\2022";
+  color: var(--accent);
+  font-size: 1.2em;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+.notes-display h1, .notes-display h2 {
+  color: var(--accent);
+  margin-bottom: 16px;
+  font-size: 1.3em;
+}
+
+.notes-display .color-red { color: #ef4444; }
+.notes-display .color-green { color: #4ade80; }
+.notes-display .color-blue { color: #60a5fa; }
+.notes-display .color-yellow { color: #fbbf24; }
+.notes-display .color-purple { color: #a78bfa; }
+.notes-display .color-orange { color: #fb923c; }
 
 /* ── Recipe Overlay ──────────────────────────────────── */
 .recipe-overlay {

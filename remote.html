@@ -292,6 +292,65 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    /* Notes */
+    .notes-toolbar {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .toolbar-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .toolbar-btn:active {
+      background: var(--bg-card-active);
+    }
+
+    .color-swatch {
+      border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      border: 2px solid transparent;
+    }
+
+    .color-swatch.selected {
+      border-color: var(--text);
+    }
+
+    .notes-input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      outline: none;
+      resize: vertical;
+      -webkit-appearance: none;
+    }
+
+    .notes-input:focus {
+      border-color: var(--accent);
+    }
+
+    .notes-input::placeholder {
+      color: var(--text-muted);
+    }
+
     /* Recipes */
     .recipe-list {
       max-height: 250px;
@@ -390,6 +449,31 @@
         </button>
       </div>
       <button class="show-all-btn active" id="btn-showall">Show All Widgets</button>
+    </div>
+
+    <!-- Notes -->
+    <div class="section">
+      <div class="section-label">Notes</div>
+      <div class="notes-toolbar">
+        <button class="toolbar-btn" id="notes-bullet" title="Add bullet">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+            <circle cx="4" cy="6" r="1.5" fill="currentColor"/><circle cx="4" cy="12" r="1.5" fill="currentColor"/><circle cx="4" cy="18" r="1.5" fill="currentColor"/>
+          </svg>
+        </button>
+        <button class="toolbar-btn color-swatch" data-color="white" style="background:#e8e8f0;" title="White"></button>
+        <button class="toolbar-btn color-swatch" data-color="red" style="background:#ef4444;" title="Red"></button>
+        <button class="toolbar-btn color-swatch" data-color="green" style="background:#4ade80;" title="Green"></button>
+        <button class="toolbar-btn color-swatch" data-color="blue" style="background:#60a5fa;" title="Blue"></button>
+        <button class="toolbar-btn color-swatch" data-color="yellow" style="background:#fbbf24;" title="Yellow"></button>
+        <button class="toolbar-btn color-swatch" data-color="purple" style="background:#a78bfa;" title="Purple"></button>
+        <button class="toolbar-btn color-swatch" data-color="orange" style="background:#fb923c;" title="Orange"></button>
+      </div>
+      <textarea class="notes-input" id="notes-input" rows="5" placeholder="Type notes here...&#10;&#10;Lines starting with - or * become bullets"></textarea>
+      <div class="action-row" style="margin-top: 8px;">
+        <button class="send-btn" id="notes-show" style="flex:1;">Show on Portal</button>
+        <button class="action-btn" id="notes-hide">Hide</button>
+      </div>
     </div>
 
     <!-- Alarm -->
@@ -540,6 +624,102 @@
       document.getElementById("btn-showall").addEventListener("click", function () {
         sendCommand({ action: "show-all" });
         showToast("Showing all widgets");
+      });
+
+      // ── Notes ──────────────────────────────────────────
+      var notesInput = document.getElementById("notes-input");
+      var currentColor = "white";
+
+      // Color swatches
+      var swatches = document.querySelectorAll(".color-swatch");
+      for (var si = 0; si < swatches.length; si++) {
+        (function (swatch) {
+          swatch.addEventListener("click", function () {
+            for (var sj = 0; sj < swatches.length; sj++) swatches[sj].classList.remove("selected");
+            swatch.classList.add("selected");
+            currentColor = swatch.getAttribute("data-color");
+          });
+        })(swatches[si]);
+      }
+
+      // Bullet button - insert "- " at cursor
+      document.getElementById("notes-bullet").addEventListener("click", function () {
+        var start = notesInput.selectionStart;
+        var val = notesInput.value;
+        var before = val.substring(0, start);
+        var after = val.substring(start);
+        // Find start of current line
+        var lineStart = before.lastIndexOf("\n") + 1;
+        var linePrefix = before.substring(lineStart);
+        if (linePrefix.trim() === "") {
+          // Empty line, add bullet
+          notesInput.value = before + "- " + after;
+          notesInput.selectionStart = notesInput.selectionEnd = start + 2;
+        } else {
+          // Add new bullet line
+          notesInput.value = before + "\n- " + after;
+          notesInput.selectionStart = notesInput.selectionEnd = start + 3;
+        }
+        notesInput.focus();
+      });
+
+      function textToHtml(text, color) {
+        var lines = text.split("\n");
+        var html = "";
+        var inList = false;
+        var colorClass = color !== "white" ? ' class="color-' + color + '"' : "";
+
+        for (var li = 0; li < lines.length; li++) {
+          var line = lines[li].trim();
+          if (!line) {
+            if (inList) { html += "</ul>"; inList = false; }
+            continue;
+          }
+          if (line.charAt(0) === "-" || line.charAt(0) === "*") {
+            if (!inList) { html += "<ul>"; inList = true; }
+            html += "<li" + colorClass + ">" + escapeHtml(line.substring(1).trim()) + "</li>";
+          } else {
+            if (inList) { html += "</ul>"; inList = false; }
+            html += "<p" + colorClass + ">" + escapeHtml(line) + "</p>";
+          }
+        }
+        if (inList) html += "</ul>";
+        return html;
+      }
+
+      function escapeHtml(str) {
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+
+      // Load saved notes from Firebase
+      db.ref("portal/notes").on("value", function (snap) {
+        var data = snap.val();
+        if (data && data.text && !notesInput.value) {
+          notesInput.value = data.text;
+          if (data.color) currentColor = data.color;
+        }
+      }, function () {});
+
+      document.getElementById("notes-show").addEventListener("click", function () {
+        var text = notesInput.value.trim();
+        if (!text) {
+          showToast("Type something first");
+          return;
+        }
+        var html = textToHtml(text, currentColor);
+        db.ref("portal/notes").set({
+          text: text,
+          html: html,
+          color: currentColor,
+          visible: true,
+          timestamp: Date.now()
+        });
+        showToast("Notes displayed on Portal");
+      });
+
+      document.getElementById("notes-hide").addEventListener("click", function () {
+        db.ref("portal/notes/visible").set(false);
+        showToast("Notes hidden");
       });
 
       // ── Alarms ─────────────────────────────────────────

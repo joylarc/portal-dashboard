@@ -140,6 +140,12 @@
       case "hide-recipe":
         hideRecipe();
         break;
+      case "show-notes":
+        showNotes(cmd.html);
+        break;
+      case "hide-notes":
+        hideNotes();
+        break;
       case "refresh":
         window.location.reload();
         break;
@@ -150,6 +156,7 @@
         hideSleep();
         hideYouTube();
         hideRecipe();
+        hideNotes();
         hideAlarm();
         showAllWidgets();
         break;
@@ -243,6 +250,38 @@
   function hideSleep() {
     document.getElementById("sleep-overlay").classList.add("hidden");
   }
+
+  // ── Notes ────────────────────────────────────────────
+  function showNotes(html) {
+    hideSleep();
+    hideYouTube();
+    hideRecipe();
+
+    var overlay = document.getElementById("notes-overlay");
+    var display = document.getElementById("notes-display");
+    display.innerHTML = html;
+    overlay.classList.remove("hidden");
+  }
+
+  function hideNotes() {
+    document.getElementById("notes-overlay").classList.add("hidden");
+    document.getElementById("notes-display").innerHTML = "";
+  }
+
+  // Also listen for notes content changes (for live updates while typing)
+  db.ref("portal/notes").on("value", function (snap) {
+    var data = snap.val();
+    if (!data || !data.visible) {
+      hideNotes();
+      return;
+    }
+    if (data.html) {
+      var overlay = document.getElementById("notes-overlay");
+      var display = document.getElementById("notes-display");
+      display.innerHTML = data.html;
+      overlay.classList.remove("hidden");
+    }
+  });
 
   // ── Recipes ──────────────────────────────────────────
   function showRecipe(url) {
