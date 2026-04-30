@@ -564,14 +564,32 @@
 
   // ── Back Button Handling ────────────────────────────
   var backBtns = document.querySelectorAll(".overlay-back-btn");
+  var backBtnTimer = null;
+
+  function showBackButtons() {
+    for (var i = 0; i < backBtns.length; i++) {
+      backBtns[i].classList.add("visible");
+    }
+    clearTimeout(backBtnTimer);
+    backBtnTimer = setTimeout(function () {
+      for (var j = 0; j < backBtns.length; j++) {
+        backBtns[j].classList.remove("visible");
+      }
+    }, 3000);
+  }
+
+  // Show back buttons on any touch/click
+  document.addEventListener("click", showBackButtons);
+  document.addEventListener("touchstart", showBackButtons);
+
   for (var bi = 0; bi < backBtns.length; bi++) {
     (function (btn) {
-      btn.addEventListener("click", function () {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
         var overlayId = btn.getAttribute("data-close");
         var overlay = document.getElementById(overlayId);
         if (overlay) {
           overlay.classList.add("hidden");
-          // Clean up YouTube if closing that overlay
           if (overlayId === "youtube-overlay") {
             document.getElementById("youtube-container").innerHTML = "";
           }
@@ -579,6 +597,7 @@
             document.getElementById("calendar-display").innerHTML = "";
           }
         }
+        btn.classList.remove("visible");
       });
     })(backBtns[bi]);
   }

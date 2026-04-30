@@ -882,7 +882,14 @@ html, body {
   cursor: pointer;
   backdrop-filter: blur(8px);
   -webkit-tap-highlight-color: transparent;
-  transition: background 0.2s;
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+
+.overlay-back-btn.visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .overlay-back-btn:active {
