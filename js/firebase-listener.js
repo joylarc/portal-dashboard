@@ -564,23 +564,31 @@
 
   // ── Back Button Handling ────────────────────────────
   var backBtns = document.querySelectorAll(".overlay-back-btn");
-  var backBtnTimer = null;
+  var fullscreenBtns = document.querySelectorAll(".fullscreen-btn");
+  var uiBtnTimer = null;
 
-  function showBackButtons() {
-    for (var i = 0; i < backBtns.length; i++) {
+  function showUIButtons() {
+    var i;
+    for (i = 0; i < backBtns.length; i++) {
       backBtns[i].classList.add("visible");
     }
-    clearTimeout(backBtnTimer);
-    backBtnTimer = setTimeout(function () {
+    for (i = 0; i < fullscreenBtns.length; i++) {
+      fullscreenBtns[i].classList.add("visible");
+    }
+    clearTimeout(uiBtnTimer);
+    uiBtnTimer = setTimeout(function () {
       for (var j = 0; j < backBtns.length; j++) {
         backBtns[j].classList.remove("visible");
+      }
+      for (var k = 0; k < fullscreenBtns.length; k++) {
+        fullscreenBtns[k].classList.remove("visible");
       }
     }, 3000);
   }
 
-  // Show back buttons on any touch/click
-  document.addEventListener("click", showBackButtons);
-  document.addEventListener("touchstart", showBackButtons);
+  // Show UI buttons on any touch/click
+  document.addEventListener("click", showUIButtons);
+  document.addEventListener("touchstart", showUIButtons);
 
   for (var bi = 0; bi < backBtns.length; bi++) {
     (function (btn) {

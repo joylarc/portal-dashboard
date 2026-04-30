@@ -868,8 +868,8 @@ html, body {
 /* ── Overlay Back Button ──────────────────────────────── */
 .overlay-back-btn {
   position: absolute;
-  top: 16px;
-  left: 16px;
+  top: 12px;
+  right: 12px;
   z-index: 200;
   background: rgba(0, 0, 0, 0.5);
   border: none;
@@ -929,7 +929,14 @@ html, body {
 /* ── Touch-friendly adjustments ───────────────────────── */
 @media (hover: none) {
   .fullscreen-btn {
-    opacity: 0.7;
+    opacity: 0;
+    transition: opacity 0.4s;
+    pointer-events: none;
+  }
+
+  .fullscreen-btn.visible {
+    opacity: 1;
+    pointer-events: auto;
   }
 }
 
