@@ -13,7 +13,7 @@ const CONFIG = {
   ],
 
   // Cloudflare Worker URL that fetches photos from Google Photos album
-  photosApiUrl: "",
+  photosApiUrl: "https://portal-photos.joy-arcangeli.workers.dev/",
 
   // How long each photo displays (in seconds)
   photoInterval: 30,
