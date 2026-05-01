@@ -393,8 +393,9 @@
     if (!keepAwakeVideo) {
       keepAwakeVideo = document.createElement("video");
       keepAwakeVideo.setAttribute("playsinline", "");
-      keepAwakeVideo.setAttribute("muted", "");
-      keepAwakeVideo.muted = true;
+      // Unmuted — Portal specifically needs unmuted video to prevent sleep
+      // The video is silent so no sound will play
+      keepAwakeVideo.muted = false;
       keepAwakeVideo.loop = true;
       keepAwakeVideo.style.position = "fixed";
       keepAwakeVideo.style.top = "-1px";
@@ -419,6 +420,22 @@
       console.log("Keep-awake video failed:", err.message);
     });
   }
+
+  // Expose globally so firebase-listener can restart it after YouTube
+  window.restartKeepAwake = function () {
+    if (keepAwakeVideo) {
+      keepAwakeVideo.play().then(function () {
+        console.log("Keep-awake video restarted");
+      }).catch(function () {});
+    }
+  };
+
+  // Periodic check: restart keep-awake video if it stopped
+  setInterval(function () {
+    if (keepAwakeVideo && keepAwakeVideo.paused) {
+      keepAwakeVideo.play().catch(function () {});
+    }
+  }, 30000);
 
   // ── Browser Fullscreen (hides URL bar) ──────────────
   function initBrowserFullscreen() {

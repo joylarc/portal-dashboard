@@ -281,6 +281,8 @@
     var container = document.getElementById("youtube-container");
     overlay.classList.add("hidden");
     container.innerHTML = "";
+    // Restart keep-awake video after YouTube stops
+    if (window.restartKeepAwake) window.restartKeepAwake();
   }
 
   // ── Sleep / Wake ─────────────────────────────────────
