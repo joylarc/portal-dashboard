@@ -521,9 +521,13 @@
 
   // Listen for to-do changes to re-render if overlay is open
   db.ref("portal/todos").on("value", function () {
-    var overlay = document.getElementById("todos-overlay");
-    if (!overlay.classList.contains("hidden")) {
+    var todosOverlay = document.getElementById("todos-overlay");
+    if (!todosOverlay.classList.contains("hidden")) {
       renderTodos();
+    }
+    var pomoOverlay = document.getElementById("pomodoro-overlay");
+    if (!pomoOverlay.classList.contains("hidden")) {
+      renderPomodoroTodos();
     }
   }, function () {});
 
@@ -792,6 +796,9 @@
   }
 
   function renderPomodoro() {
+    // Also render todos in the side panel
+    renderPomodoroTodos();
+
     db.ref("portal/pomodoro").once("value", function (snap) {
       var pom = snap.val();
       var display = document.getElementById("pomodoro-display");
@@ -865,6 +872,86 @@
         })(freqs[i], i * 0.35);
       }
     } catch (e) {}
+  }
+
+  function renderPomodoroTodos() {
+    db.ref("portal/todos").once("value", function (snap) {
+      var todos = snap.val() || {};
+      var container = document.getElementById("pomodoro-todos");
+      var keys = Object.keys(todos);
+
+      if (keys.length === 0) {
+        container.innerHTML = '<div style="color:var(--text-dim);font-size:0.9rem;text-align:center;margin-top:40px;">No tasks</div>';
+        return;
+      }
+
+      var categories = {};
+      for (var i = 0; i < keys.length; i++) {
+        var todo = todos[keys[i]];
+        if (!todo) continue;
+        todo._key = keys[i];
+        var cat = todo.category || "Other";
+        if (!categories[cat]) categories[cat] = [];
+        categories[cat].push(todo);
+      }
+
+      var priorityOrder = { high: 0, medium: 1, low: 2 };
+      for (var c in categories) {
+        categories[c].sort(function (a, b) {
+          if (a.completed !== b.completed) return a.completed ? 1 : -1;
+          return (priorityOrder[a.priority || "low"] || 2) - (priorityOrder[b.priority || "low"] || 2);
+        });
+      }
+
+      var catOrder = ["Work", "Home", "Groceries", "Errands", "Other"];
+      var html = '';
+      for (var ci = 0; ci < catOrder.length; ci++) {
+        var catName = catOrder[ci];
+        if (!categories[catName] || categories[catName].length === 0) continue;
+        html += '<div class="todo-category-group">';
+        html += '<div class="todo-category-label cat-' + catName.toLowerCase() + '">' + catName + '</div>';
+        for (var ti = 0; ti < categories[catName].length; ti++) {
+          var t = categories[catName][ti];
+          var completedClass = t.completed ? " completed" : "";
+          var priorityClass = " todo-priority-" + (t.priority || "low");
+          html += '<div class="todo-item' + completedClass + priorityClass + '" data-pomo-todo-key="' + t._key + '">';
+          html += '<div class="todo-checkbox"></div>';
+          html += '<span class="todo-text">' + escapeHtml(t.text) + '</span>';
+          html += '</div>';
+          if (t.subtasks) {
+            var subKeys = Object.keys(t.subtasks);
+            for (var si = 0; si < subKeys.length; si++) {
+              var sub = t.subtasks[subKeys[si]];
+              if (!sub) continue;
+              html += '<div class="todo-item todo-subtask-portal' + (sub.completed ? " completed" : "") + '" data-pomo-todo-key="' + t._key + '" data-pomo-sub-key="' + subKeys[si] + '">';
+              html += '<div class="todo-checkbox"></div>';
+              html += '<span class="todo-text">' + escapeHtml(sub.text) + '</span>';
+              html += '</div>';
+            }
+          }
+        }
+        html += '</div>';
+      }
+      container.innerHTML = html;
+
+      // Tap to toggle
+      var items = container.querySelectorAll(".todo-item");
+      for (var ii = 0; ii < items.length; ii++) {
+        (function (item) {
+          item.addEventListener("click", function () {
+            var key = item.getAttribute("data-pomo-todo-key");
+            var subKey = item.getAttribute("data-pomo-sub-key");
+            var isCompleted = item.classList.contains("completed");
+            if (subKey) {
+              db.ref("portal/todos/" + key + "/subtasks/" + subKey + "/completed").set(!isCompleted);
+            } else {
+              db.ref("portal/todos/" + key + "/completed").set(!isCompleted);
+            }
+            setTimeout(renderPomodoroTodos, 300);
+          });
+        })(items[ii]);
+      }
+    });
   }
 
   // Keep rendering pomodoro if overlay is open

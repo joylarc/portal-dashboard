@@ -826,15 +826,62 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px;
+  padding: 30px;
 }
 
 .pomodoro-overlay.hidden { display: none; }
 
+.pomodoro-split {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  gap: 30px;
+  align-items: center;
+}
+
 .pomodoro-display {
   text-align: center;
-  max-width: 600px;
-  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.pomodoro-todos {
+  flex: 1;
+  height: 100%;
+  overflow-y: auto;
+  padding: 10px 0;
+}
+
+.pomodoro-todos .todo-category-group {
+  margin-bottom: 14px;
+}
+
+.pomodoro-todos .todo-item {
+  font-size: clamp(0.85rem, 1.3vw, 1.1rem);
+  padding: 6px 10px;
+}
+
+.pomodoro-todos .todo-subtask-portal {
+  margin-left: 30px;
+  font-size: clamp(0.75rem, 1.1vw, 0.9rem);
+}
+
+.pomodoro-todos .todo-checkbox {
+  width: 20px;
+  height: 20px;
+}
+
+@media (orientation: portrait) {
+  .pomodoro-split {
+    flex-direction: column;
+  }
+
+  .pomodoro-todos {
+    max-height: 40vh;
+  }
 }
 
 .pomodoro-phase {
