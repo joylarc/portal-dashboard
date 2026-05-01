@@ -164,6 +164,24 @@
       case "hide-calendar":
         hideCalendar();
         break;
+      case "show-timer":
+        showTimerOverlay();
+        break;
+      case "add-timer":
+        addTimer(cmd.label, cmd.seconds);
+        break;
+      case "clear-timers":
+        db.ref("portal/timers").remove();
+        break;
+      case "show-pomodoro":
+        showPomodoroOverlay();
+        break;
+      case "start-pomodoro":
+        startPomodoro(cmd.workMin, cmd.breakMin);
+        break;
+      case "stop-pomodoro":
+        stopPomodoro();
+        break;
       case "refresh":
         window.location.reload();
         break;
@@ -178,6 +196,8 @@
         hideWeather();
         hideTodos();
         hideCalendar();
+        hideTimerOverlay();
+        hidePomodoroOverlay();
         hideAlarm();
         showAllWidgets();
         break;
@@ -545,6 +565,8 @@
           case "recipes": showLastRecipe(); break;
           case "youtube": showYouTubePrompt(); break;
           case "notes": showLastNotes(); break;
+          case "timer": showTimerOverlay(); break;
+          case "pomodoro": showPomodoroOverlay(); break;
         }
       });
     })(appIcons[ai]);
@@ -630,6 +652,228 @@
       });
     })(backBtns[bi]);
   }
+
+  // ── Timers ───────────────────────────────────────────
+  var timerInterval = null;
+  var timerAudioCtx = null;
+
+  function showTimerOverlay() {
+    hideSleep(); hideYouTube(); hideRecipe(); hideNotes(); hideWeather(); hideTodos(); hideCalendar(); hidePomodoroOverlay();
+    document.getElementById("timer-overlay").classList.remove("hidden");
+    startTimerRendering();
+  }
+
+  function hideTimerOverlay() {
+    document.getElementById("timer-overlay").classList.add("hidden");
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  }
+
+  function addTimer(label, seconds) {
+    var key = db.ref("portal/timers").push().key;
+    db.ref("portal/timers/" + key).set({
+      label: label || "Timer",
+      endsAt: Date.now() + (seconds * 1000),
+      alerted: false
+    });
+    showTimerOverlay();
+  }
+
+  function startTimerRendering() {
+    if (timerInterval) clearInterval(timerInterval);
+    renderTimers();
+    timerInterval = setInterval(renderTimers, 250);
+  }
+
+  function renderTimers() {
+    db.ref("portal/timers").once("value", function (snap) {
+      var timers = snap.val() || {};
+      var display = document.getElementById("timer-display");
+      var keys = Object.keys(timers);
+
+      if (keys.length === 0) {
+        display.innerHTML = '<div class="timer-empty">Set a timer from the remote</div>';
+        return;
+      }
+
+      var html = '<div class="timer-list">';
+      var now = Date.now();
+
+      for (var i = 0; i < keys.length; i++) {
+        var t = timers[keys[i]];
+        if (!t) continue;
+        var remaining = Math.max(0, Math.ceil((t.endsAt - now) / 1000));
+        var isDone = remaining <= 0;
+        var mins = Math.floor(remaining / 60);
+        var secs = remaining % 60;
+        var timeStr = mins + ":" + (secs < 10 ? "0" : "") + secs;
+
+        if (isDone) timeStr = "Done!";
+
+        html += '<div class="timer-entry' + (isDone ? " done" : "") + '">';
+        html += '<div class="timer-label">' + escapeHtml(t.label) + '</div>';
+        html += '<div class="timer-countdown">' + timeStr + '</div>';
+        html += '</div>';
+
+        // Trigger alarm sound when timer completes
+        if (isDone && !t.alerted) {
+          db.ref("portal/timers/" + keys[i] + "/alerted").set(true);
+          playTimerAlarm();
+        }
+      }
+      html += '</div>';
+      display.innerHTML = html;
+    });
+  }
+
+  function playTimerAlarm() {
+    try {
+      var ctx = timerAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      timerAudioCtx = ctx;
+      var count = 0;
+      var interval = setInterval(function () {
+        if (count >= 20) { clearInterval(interval); return; }
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = (count % 2 === 0) ? 1000 : 750;
+        gain.gain.value = 0.3;
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.12);
+        count++;
+      }, 300);
+    } catch (e) {}
+  }
+
+  // Keep rendering timers if overlay is open
+  db.ref("portal/timers").on("value", function () {
+    var overlay = document.getElementById("timer-overlay");
+    if (!overlay.classList.contains("hidden")) {
+      renderTimers();
+    }
+  }, function () {});
+
+  // ── Pomodoro ────────────────────────────────────────
+  var pomodoroInterval = null;
+  var pomodoroAudioCtx = null;
+
+  function showPomodoroOverlay() {
+    hideSleep(); hideYouTube(); hideRecipe(); hideNotes(); hideWeather(); hideTodos(); hideCalendar(); hideTimerOverlay();
+    document.getElementById("pomodoro-overlay").classList.remove("hidden");
+    startPomodoroRendering();
+  }
+
+  function hidePomodoroOverlay() {
+    document.getElementById("pomodoro-overlay").classList.add("hidden");
+    if (pomodoroInterval) { clearInterval(pomodoroInterval); pomodoroInterval = null; }
+  }
+
+  function startPomodoro(workMin, breakMin) {
+    db.ref("portal/pomodoro").set({
+      running: true,
+      workMin: workMin,
+      breakMin: breakMin,
+      phase: "work",
+      phaseEndsAt: Date.now() + (workMin * 60 * 1000),
+      cycle: 1,
+      alerted: false
+    });
+    showPomodoroOverlay();
+  }
+
+  function stopPomodoro() {
+    db.ref("portal/pomodoro").set({ running: false });
+  }
+
+  function startPomodoroRendering() {
+    if (pomodoroInterval) clearInterval(pomodoroInterval);
+    renderPomodoro();
+    pomodoroInterval = setInterval(renderPomodoro, 250);
+  }
+
+  function renderPomodoro() {
+    db.ref("portal/pomodoro").once("value", function (snap) {
+      var pom = snap.val();
+      var display = document.getElementById("pomodoro-display");
+
+      if (!pom || !pom.running) {
+        display.innerHTML = '<div class="pomodoro-phase stopped">Stopped</div>' +
+          '<div class="pomodoro-time">--:--</div>' +
+          '<div class="pomodoro-cycle">Start a session from the remote</div>';
+        return;
+      }
+
+      var now = Date.now();
+      var remaining = Math.max(0, Math.ceil((pom.phaseEndsAt - now) / 1000));
+      var mins = Math.floor(remaining / 60);
+      var secs = remaining % 60;
+      var timeStr = (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
+
+      var phaseClass = pom.phase === "work" ? "work" : "break-phase";
+      var phaseLabel = pom.phase === "work" ? "Focus" : "Break";
+
+      display.innerHTML = '<div class="pomodoro-phase ' + phaseClass + '">' + phaseLabel + '</div>' +
+        '<div class="pomodoro-time">' + timeStr + '</div>' +
+        '<div class="pomodoro-cycle">Cycle ' + pom.cycle + '</div>';
+
+      // Phase transition
+      if (remaining <= 0 && !pom.alerted) {
+        db.ref("portal/pomodoro/alerted").set(true);
+        playPomodoroChime(pom.phase);
+
+        // Switch phase after a brief delay
+        setTimeout(function () {
+          db.ref("portal/pomodoro").once("value", function (snap2) {
+            var p = snap2.val();
+            if (!p || !p.running) return;
+            if (p.phase === "work") {
+              db.ref("portal/pomodoro").update({
+                phase: "break",
+                phaseEndsAt: Date.now() + (p.breakMin * 60 * 1000),
+                alerted: false
+              });
+            } else {
+              db.ref("portal/pomodoro").update({
+                phase: "work",
+                phaseEndsAt: Date.now() + (p.workMin * 60 * 1000),
+                cycle: (p.cycle || 1) + 1,
+                alerted: false
+              });
+            }
+          });
+        }, 1500);
+      }
+    });
+  }
+
+  function playPomodoroChime(phase) {
+    try {
+      var ctx = pomodoroAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      pomodoroAudioCtx = ctx;
+      // Different tone for work vs break
+      var freqs = phase === "work" ? [523, 659, 784] : [784, 659, 523];
+      for (var i = 0; i < freqs.length; i++) {
+        (function (freq, delay) {
+          var osc = ctx.createOscillator();
+          var gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = freq;
+          gain.gain.value = 0.25;
+          osc.start(ctx.currentTime + delay);
+          osc.stop(ctx.currentTime + delay + 0.3);
+        })(freqs[i], i * 0.35);
+      }
+    } catch (e) {}
+  }
+
+  // Keep rendering pomodoro if overlay is open
+  db.ref("portal/pomodoro").on("value", function () {
+    var overlay = document.getElementById("pomodoro-overlay");
+    if (!overlay.classList.contains("hidden")) {
+      renderPomodoro();
+    }
+  }, function () {});
 
   // ── Alarm ────────────────────────────────────────────
   function hideAlarm() {

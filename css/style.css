@@ -749,6 +749,123 @@ html, body {
   border: none;
 }
 
+/* ── Timer Overlay ───────────────────────────────────── */
+.timer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.timer-overlay.hidden { display: none; }
+
+.timer-display {
+  max-width: 900px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.timer-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.timer-entry {
+  text-align: center;
+  background: var(--bg-widget);
+  border-radius: 16px;
+  padding: 24px 40px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.timer-label {
+  font-size: clamp(1rem, 2vw, 1.4rem);
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.timer-countdown {
+  font-size: clamp(4rem, 10vw, 8rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  background: linear-gradient(135deg, #e8e8f0 0%, #a0a0cc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.timer-entry.done .timer-countdown {
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.timer-empty {
+  font-size: 1.3rem;
+  color: var(--text-dim);
+}
+
+/* ── Pomodoro Overlay ────────────────────────────────── */
+.pomodoro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.pomodoro-overlay.hidden { display: none; }
+
+.pomodoro-display {
+  text-align: center;
+  max-width: 600px;
+  width: 100%;
+}
+
+.pomodoro-phase {
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+}
+
+.pomodoro-phase.work { color: #ef4444; }
+.pomodoro-phase.break-phase { color: #4ade80; }
+.pomodoro-phase.stopped { color: var(--text-dim); }
+
+.pomodoro-time {
+  font-size: clamp(6rem, 15vw, 12rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  background: linear-gradient(135deg, #e8e8f0 0%, #a0a0cc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.pomodoro-cycle {
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  color: var(--text-dim);
+  margin-top: 16px;
+}
+
 /* ── Notes Overlay ───────────────────────────────────── */
 .notes-overlay {
   position: fixed;

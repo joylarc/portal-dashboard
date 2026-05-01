@@ -117,6 +117,18 @@
             </svg>
             <span>Notes</span>
           </button>
+          <button class="app-icon" data-app="timer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32">
+              <circle cx="12" cy="13" r="9"/><path d="M12 9v4l2 2"/><path d="M9 1h6"/><path d="M12 1v3"/>
+            </svg>
+            <span>Timer</span>
+          </button>
+          <button class="app-icon" data-app="pomodoro">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32">
+              <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 4"/>
+            </svg>
+            <span>Pomodoro</span>
+          </button>
         </div>
       </div>
     </div>
@@ -147,6 +159,18 @@
   <div id="calendar-overlay" class="calendar-overlay hidden">
     <button class="overlay-back-btn" data-close="calendar-overlay">&larr; Back</button>
     <div class="calendar-display" id="calendar-display"></div>
+  </div>
+
+  <!-- Timer overlay (hidden by default) -->
+  <div id="timer-overlay" class="timer-overlay hidden">
+    <button class="overlay-back-btn" data-close="timer-overlay">&larr; Back</button>
+    <div class="timer-display" id="timer-display"></div>
+  </div>
+
+  <!-- Pomodoro overlay (hidden by default) -->
+  <div id="pomodoro-overlay" class="pomodoro-overlay hidden">
+    <button class="overlay-back-btn" data-close="pomodoro-overlay">&larr; Back</button>
+    <div class="pomodoro-display" id="pomodoro-display"></div>
   </div>
 
   <!-- Notes overlay (hidden by default) -->

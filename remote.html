@@ -292,6 +292,13 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    /* Timer */
+    .timer-set-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
     /* To-Do Remote */
     .todo-remote-item {
       display: flex;
@@ -631,6 +638,39 @@
         <div class="action-row" style="margin-top: 8px;">
           <button class="action-btn" id="yt-stop">Stop</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Timer -->
+    <div class="section">
+      <div class="section-label">Timer</div>
+      <div class="timer-set-row">
+        <input type="number" class="url-input" id="timer-min" placeholder="Min" min="0" value="0" style="width:60px;text-align:center;">
+        <span style="color:var(--text-muted);font-size:0.9rem;">:</span>
+        <input type="number" class="url-input" id="timer-sec" placeholder="Sec" min="0" max="59" value="0" style="width:60px;text-align:center;">
+        <input type="text" class="url-input" id="timer-label" placeholder="Label (optional)" style="flex:1;">
+        <button class="send-btn" id="timer-start">Start</button>
+      </div>
+      <div class="action-row" style="margin-top:8px;">
+        <button class="action-btn" id="timer-show">Show on Portal</button>
+        <button class="action-btn" id="timer-clear">Clear All</button>
+      </div>
+    </div>
+
+    <!-- Pomodoro -->
+    <div class="section">
+      <div class="section-label">Pomodoro</div>
+      <div class="timer-set-row">
+        <div style="text-align:center;flex:1;">
+          <div style="font-size:0.65rem;color:var(--text-muted);margin-bottom:2px;">FOCUS</div>
+          <input type="number" class="url-input" id="pomo-work" value="25" min="1" style="width:60px;text-align:center;">
+        </div>
+        <div style="text-align:center;flex:1;">
+          <div style="font-size:0.65rem;color:var(--text-muted);margin-bottom:2px;">BREAK</div>
+          <input type="number" class="url-input" id="pomo-break" value="5" min="1" style="width:60px;text-align:center;">
+        </div>
+        <button class="send-btn" id="pomo-start">Start</button>
+        <button class="action-btn" id="pomo-stop" style="flex:none;">Stop</button>
       </div>
     </div>
 
@@ -1163,6 +1203,41 @@
         sendCommand({ action: "stop-youtube" });
         ytControls.classList.add("hidden");
         showToast("YouTube stopped");
+      });
+
+      // ── Timer ──────────────────────────────────────────
+      document.getElementById("timer-start").addEventListener("click", function () {
+        var mins = parseInt(document.getElementById("timer-min").value) || 0;
+        var secs = parseInt(document.getElementById("timer-sec").value) || 0;
+        var total = (mins * 60) + secs;
+        if (total <= 0) { showToast("Set a time first"); return; }
+        var label = document.getElementById("timer-label").value.trim() || (mins > 0 ? mins + " min" : secs + " sec");
+        sendCommand({ action: "add-timer", label: label, seconds: total });
+        document.getElementById("timer-label").value = "";
+        showToast("Timer started: " + label);
+      });
+
+      document.getElementById("timer-show").addEventListener("click", function () {
+        sendCommand({ action: "show-timer" });
+        showToast("Showing timer on Portal");
+      });
+
+      document.getElementById("timer-clear").addEventListener("click", function () {
+        sendCommand({ action: "clear-timers" });
+        showToast("Timers cleared");
+      });
+
+      // ── Pomodoro ────────────────────────────────────────
+      document.getElementById("pomo-start").addEventListener("click", function () {
+        var workMin = parseInt(document.getElementById("pomo-work").value) || 25;
+        var breakMin = parseInt(document.getElementById("pomo-break").value) || 5;
+        sendCommand({ action: "start-pomodoro", workMin: workMin, breakMin: breakMin });
+        showToast("Pomodoro started: " + workMin + "/" + breakMin + " min");
+      });
+
+      document.getElementById("pomo-stop").addEventListener("click", function () {
+        sendCommand({ action: "stop-pomodoro" });
+        showToast("Pomodoro stopped");
       });
 
       // ── Recipes ─────────────────────────────────────────
