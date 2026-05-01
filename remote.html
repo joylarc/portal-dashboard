@@ -374,19 +374,29 @@
       margin-top: 4px;
     }
 
-    .todo-cat-badge {
+    .todo-cat-select {
       font-size: 0.65rem;
-      padding: 1px 6px;
+      padding: 2px 4px;
       border-radius: 4px;
       font-weight: 600;
       flex-shrink: 0;
+      border: none;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      font-family: inherit;
     }
 
-    .todo-cat-badge.cat-work { background: rgba(96,165,250,0.2); color: #60a5fa; }
-    .todo-cat-badge.cat-home { background: rgba(251,191,36,0.2); color: #fbbf24; }
-    .todo-cat-badge.cat-groceries { background: rgba(74,222,128,0.2); color: #4ade80; }
-    .todo-cat-badge.cat-errands { background: rgba(251,146,60,0.2); color: #fb923c; }
-    .todo-cat-badge.cat-other { background: rgba(167,139,250,0.2); color: #a78bfa; }
+    .todo-cat-select.cat-work { background: rgba(96,165,250,0.2); color: #60a5fa; }
+    .todo-cat-select.cat-home { background: rgba(251,191,36,0.2); color: #fbbf24; }
+    .todo-cat-select.cat-groceries { background: rgba(74,222,128,0.2); color: #4ade80; }
+    .todo-cat-select.cat-errands { background: rgba(251,146,60,0.2); color: #fb923c; }
+    .todo-cat-select.cat-other { background: rgba(167,139,250,0.2); color: #a78bfa; }
+
+    .todo-cat-select option {
+      background: var(--bg);
+      color: var(--text);
+    }
 
     /* Notes */
     .notes-toolbar {
@@ -788,14 +798,27 @@
             }
             var subtaskBadge = subtaskCount > 0 ? ' <span style="font-size:0.65rem;color:var(--text-muted);">' + subtaskDone + '/' + subtaskCount + '</span>' : "";
 
+            var catVal = (todo.category || "Other");
+            var catLower = catVal.toLowerCase();
             div.innerHTML = '<button class="todo-remote-check">' + (todo.completed ? "\u2713" : "") + '</button>' +
-              '<span class="todo-cat-badge cat-' + (todo.category || "other").toLowerCase() + '">' + (todo.category || "Other") + '</span> ' +
+              '<select class="todo-cat-select cat-' + catLower + '">' +
+                '<option value="Work"' + (catVal === "Work" ? " selected" : "") + '>Work</option>' +
+                '<option value="Home"' + (catVal === "Home" ? " selected" : "") + '>Home</option>' +
+                '<option value="Groceries"' + (catVal === "Groceries" ? " selected" : "") + '>Groceries</option>' +
+                '<option value="Errands"' + (catVal === "Errands" ? " selected" : "") + '>Errands</option>' +
+                '<option value="Other"' + (catVal === "Other" ? " selected" : "") + '>Other</option>' +
+              '</select> ' +
               '<span class="todo-remote-text">' + escapeHtml(todo.text) + subtaskBadge + '</span>' +
               '<button class="todo-remote-delete">Del</button>';
 
             div.querySelector(".todo-remote-check").addEventListener("click", function (e) {
               e.stopPropagation();
               db.ref("portal/todos/" + todo._key + "/completed").set(!todo.completed);
+            });
+            div.querySelector(".todo-cat-select").addEventListener("change", function (e) {
+              e.stopPropagation();
+              db.ref("portal/todos/" + todo._key + "/category").set(e.target.value);
+              showToast("Moved to " + e.target.value);
             });
             div.querySelector(".todo-remote-delete").addEventListener("click", function (e) {
               e.stopPropagation();
