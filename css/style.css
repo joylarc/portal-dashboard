@@ -588,8 +588,20 @@ html, body {
   color: var(--text-primary);
 }
 
+.todos-columns {
+  column-count: 1;
+}
+
+@media (orientation: landscape) {
+  .todos-columns {
+    column-count: 2;
+    column-gap: 30px;
+  }
+}
+
 .todo-category-group {
   margin-bottom: 20px;
+  break-inside: avoid;
 }
 
 .todo-category-label {

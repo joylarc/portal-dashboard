@@ -812,8 +812,8 @@
 
             wrapper.appendChild(div);
 
-            // Expanded: show sub-tasks + add field
-            if (expandedTodo === todo._key) {
+            // Always show sub-tasks; expand for add field
+            {
               var subContainer = document.createElement("div");
               subContainer.className = "todo-subtask-container";
 
@@ -840,33 +840,38 @@
                 }
               }
 
-              // Add sub-task input
-              var addRow = document.createElement("div");
-              addRow.className = "todo-subtask-add";
-              addRow.innerHTML = '<input type="text" class="url-input" placeholder="Add sub-task..." style="flex:1;padding:8px 10px;font-size:0.8rem;">' +
-                '<button class="send-btn" style="padding:8px 12px;font-size:0.75rem;">Add</button>';
+              // Add sub-task input (only when expanded)
+              if (expandedTodo === todo._key) {
+                var addRow = document.createElement("div");
+                addRow.className = "todo-subtask-add";
+                addRow.innerHTML = '<input type="text" class="url-input" placeholder="Add sub-task..." style="flex:1;padding:8px 10px;font-size:0.8rem;">' +
+                  '<button class="send-btn" style="padding:8px 12px;font-size:0.75rem;">Add</button>';
 
-              var subInput = addRow.querySelector("input");
-              var subBtn = addRow.querySelector("button");
+                var subInput = addRow.querySelector("input");
+                var subBtn = addRow.querySelector("button");
 
-              function addSubtask() {
-                var text = subInput.value.trim();
-                if (!text) return;
-                var subKey = db.ref("portal/todos/" + todo._key + "/subtasks").push().key;
-                db.ref("portal/todos/" + todo._key + "/subtasks/" + subKey).set({
-                  text: text,
-                  completed: false
+                function addSubtask() {
+                  var text = subInput.value.trim();
+                  if (!text) return;
+                  var subKey = db.ref("portal/todos/" + todo._key + "/subtasks").push().key;
+                  db.ref("portal/todos/" + todo._key + "/subtasks/" + subKey).set({
+                    text: text,
+                    completed: false
+                  });
+                  subInput.value = "";
+                }
+
+                subBtn.addEventListener("click", addSubtask);
+                subInput.addEventListener("keydown", function (e) {
+                  if (e.key === "Enter") addSubtask();
                 });
-                subInput.value = "";
+
+                subContainer.appendChild(addRow);
               }
 
-              subBtn.addEventListener("click", addSubtask);
-              subInput.addEventListener("keydown", function (e) {
-                if (e.key === "Enter") addSubtask();
-              });
-
-              subContainer.appendChild(addRow);
-              wrapper.appendChild(subContainer);
+              if (subContainer.children.length > 0) {
+                wrapper.appendChild(subContainer);
+              }
             }
 
             list.appendChild(wrapper);

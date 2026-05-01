@@ -432,6 +432,7 @@
 
       var catOrder = ["Work", "Home", "Groceries", "Errands", "Other"];
       var html = '<div class="todos-header">To-Do</div>';
+      html += '<div class="todos-columns">';
 
       for (var ci = 0; ci < catOrder.length; ci++) {
         var catName = catOrder[ci];
@@ -465,6 +466,8 @@
         }
         html += '</div>';
       }
+
+      html += '</div>'; // close todos-columns
 
       if (keys.length === 0) {
         html += '<div style="text-align:center;color:var(--text-dim);font-size:1.3rem;margin-top:40px;">No tasks yet. Add some from the remote!</div>';
