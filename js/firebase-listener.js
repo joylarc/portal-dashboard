@@ -681,7 +681,7 @@
       endsAt: Date.now() + (seconds * 1000),
       alerted: false
     });
-    showTimerOverlay();
+    // Don't auto-open overlay — timer runs in background
   }
 
   function startTimerRendering() {
@@ -758,6 +758,23 @@
       renderTimers();
     }
   }, function () {});
+
+  // Background timer checker — fires alarms even when overlay isn't showing
+  setInterval(function () {
+    db.ref("portal/timers").once("value", function (snap) {
+      var timers = snap.val() || {};
+      var keys = Object.keys(timers);
+      var now = Date.now();
+      for (var i = 0; i < keys.length; i++) {
+        var t = timers[keys[i]];
+        if (!t || t.alerted) continue;
+        if (t.endsAt <= now) {
+          db.ref("portal/timers/" + keys[i] + "/alerted").set(true);
+          playTimerAlarm();
+        }
+      }
+    });
+  }, 1000);
 
   // ── Pomodoro ────────────────────────────────────────
   var pomodoroInterval = null;
