@@ -43,7 +43,7 @@ iPhone-optimized web page, also hosted on GitHub Pages. Sends commands to Fireba
 
 **Sections on the remote:**
 - **Display** — switch Portal to show any single widget fullscreen, or show all four
-- **To-Do** — add tasks with category/priority/sub-tasks, check off, delete, show on Portal
+- **To-Do** — add tasks with color tags/priority/sub-tasks, check off, delete, show on Portal
 - **Notes** — type text/bullets, pick a color, show/hide on Portal
 - **Alarm** — set/delete alarms with a time picker
 - **Timer** — set countdown timers with labels, show on Portal, clear all
@@ -60,8 +60,8 @@ Free-tier Firebase project (`portal-4e3e3`) that acts as the communication bridg
 - `portal/command` — latest command from the remote
 - `portal/alarms` — list of set alarms with hour, minute, fired status
 - `portal/notes` — current notes text, rendered HTML, color, visibility
-- `portal/todos` — tasks with category, priority, sub-tasks, completion status
-- `portal/timers` — active countdown timers with end times
+- `portal/todos` — tasks with color tag, priority, sub-tasks, completion status
+- `portal/timers` — active countdown timers with end times and alert status
 - `portal/pomodoro` — pomodoro state (phase, durations, cycle count)
 
 **Security rules** (set in Firebase Console > Realtime Database > Rules):
@@ -99,8 +99,10 @@ Fetches MTA subway GTFS-RT protobuf feeds, decodes them with a hand-written prot
 | Fulton St 2/3 | 2, 3 | 230 |
 | Brooklyn Bridge–City Hall | 4, 5 | 416 |
 | Brooklyn Bridge–City Hall | 6 | 640 |
-| World Trade Center | E | E01 |
+| World Trade Center | E | E01 (terminal — all departures "Uptown / Jamaica") |
 | City Hall | R | R25 |
+
+**Service Alerts:** Also fetches the `camsys/subway-alerts` feed for all subway lines. Alerts include a `type` field from the MTA Mercury extension (e.g., "Delays", "Planned - Stops Skipped", "Boarding Change"). Dashboard groups alerts into Active/Service Changes/Station Info categories with collapsible tree view.
 
 ### 5. Cloudflare Worker — Photos (`portal-photos`)
 
@@ -176,11 +178,13 @@ portal-dashboard/
 - **Display styling:** `css/style.css` — `.weather-*` classes
 
 ### To-Do List
-- **Categories:** Add/remove in both `remote.html` (select options + CSS) and `firebase-listener.js` (`catOrder` array + CSS classes)
+- **Color tags:** Tasks tagged with colors (white/red/orange/yellow/green/blue/purple). Tap the color dot on remote to cycle. Grouped by color on Portal.
+- **Sub-tasks:** Always visible under parent. Tap task text on remote to show/hide the add-subtask input.
 - **Portal display:** `css/style.css` — `.todo-item`, `.todo-subtask-portal`. Two-column via `.todos-columns`
 - **Priority colors:** `css/style.css` — `.todo-priority-high`, `.todo-priority-medium`
 
 ### Timer
+- **Background behavior:** Timers run in background — don't interrupt current view. Alarm fires regardless of what's showing.
 - **Alarm sound:** `js/firebase-listener.js` — `playTimerAlarm()` function
 - **Display styling:** `css/style.css` — `.timer-countdown`, `.timer-entry`
 
@@ -283,8 +287,10 @@ If the new app stores data, add a path in Firebase Console rules:
 - Positioned top-right corner
 
 ### Keep-Awake
-- Hidden silent video loop in `dashboard.js` — `enableKeepAwake()` function
+- Hidden unmuted silent video loop in `dashboard.js` — `enableKeepAwake()` function (unmuted required for Portal)
 - Starts on first user tap (fullscreen button or any touch)
+- Restarts automatically after YouTube closes via `window.restartKeepAwake()`
+- 30-second watchdog interval re-starts video if it gets paused
 
 ### Deployment
 - Push to `main` triggers GitHub Actions deploy to GitHub Pages
@@ -300,5 +306,7 @@ If the new app stores data, add a path in Firebase Console rules:
 - **`const` and `window`.** `const` declarations aren't on `window`. Use `typeof CONFIG === "undefined"`.
 - **Protobuf decoding.** MTA Worker includes hand-written decoder — no npm dependencies.
 - **Google Docs on Portal.** Can't use `/pub` URLs (requires cookies). Apps Script renders HTML directly.
-- **Keep-awake.** Silent looping video (NoSleep.js technique) prevents Portal screen sleep.
+- **Keep-awake.** Unmuted silent looping video (NoSleep.js technique) prevents Portal screen sleep. Restarts after YouTube, 30s watchdog.
 - **Refresh loop prevention.** `lastTimestamp = Date.now()` ignores commands from before page load.
+- **MTA alerts.** Mercury extension field 1001 (string field 3) contains alert type. Categorized as Active/Service Changes/Station Info.
+- **Wrangler CLI.** Has TLS cert issues on this Mac — update workers via Cloudflare dashboard paste-and-deploy.
