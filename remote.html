@@ -299,6 +299,21 @@
       align-items: center;
     }
 
+    /* To-Do Color Buttons */
+    .todo-color-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      flex-shrink: 0;
+    }
+
+    .todo-color-btn.selected {
+      border-color: var(--text);
+    }
+
     /* To-Do Remote */
     .todo-remote-item {
       display: flex;
@@ -381,28 +396,13 @@
       margin-top: 4px;
     }
 
-    .todo-cat-select {
-      font-size: 0.65rem;
-      padding: 2px 4px;
-      border-radius: 4px;
-      font-weight: 600;
+    .todo-color-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
       flex-shrink: 0;
-      border: none;
       cursor: pointer;
-      -webkit-appearance: none;
-      appearance: none;
-      font-family: inherit;
-    }
-
-    .todo-cat-select.cat-work { background: rgba(96,165,250,0.2); color: #60a5fa; }
-    .todo-cat-select.cat-home { background: rgba(251,191,36,0.2); color: #fbbf24; }
-    .todo-cat-select.cat-groceries { background: rgba(74,222,128,0.2); color: #4ade80; }
-    .todo-cat-select.cat-errands { background: rgba(251,146,60,0.2); color: #fb923c; }
-    .todo-cat-select.cat-other { background: rgba(167,139,250,0.2); color: #a78bfa; }
-
-    .todo-cat-select option {
-      background: var(--bg);
-      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
     }
 
     /* Notes */
@@ -571,15 +571,16 @@
         <input type="text" class="url-input" id="todo-text" placeholder="Add a task...">
         <button class="send-btn" id="todo-add">Add</button>
       </div>
-      <div class="todo-options" style="display:flex;gap:6px;margin-top:6px;">
-        <select class="url-input" id="todo-category" style="flex:1;font-size:0.8rem;padding:8px;">
-          <option value="Work">Work</option>
-          <option value="Home">Home</option>
-          <option value="Groceries">Groceries</option>
-          <option value="Errands">Errands</option>
-          <option value="Other">Other</option>
-        </select>
-        <select class="url-input" id="todo-priority" style="flex:1;font-size:0.8rem;padding:8px;">
+      <div class="todo-options" style="display:flex;gap:6px;margin-top:6px;align-items:center;">
+        <span style="font-size:0.65rem;color:var(--text-muted);">Color:</span>
+        <button class="todo-color-btn selected" data-todo-color="white" style="background:#e8e8f0;"></button>
+        <button class="todo-color-btn" data-todo-color="red" style="background:#ef4444;"></button>
+        <button class="todo-color-btn" data-todo-color="orange" style="background:#fb923c;"></button>
+        <button class="todo-color-btn" data-todo-color="yellow" style="background:#fbbf24;"></button>
+        <button class="todo-color-btn" data-todo-color="green" style="background:#4ade80;"></button>
+        <button class="todo-color-btn" data-todo-color="blue" style="background:#60a5fa;"></button>
+        <button class="todo-color-btn" data-todo-color="purple" style="background:#a78bfa;"></button>
+        <select class="url-input" id="todo-priority" style="width:80px;font-size:0.8rem;padding:8px;">
           <option value="low">Low</option>
           <option value="medium">Medium</option>
           <option value="high">High</option>
@@ -838,16 +839,11 @@
             }
             var subtaskBadge = subtaskCount > 0 ? ' <span style="font-size:0.65rem;color:var(--text-muted);">' + subtaskDone + '/' + subtaskCount + '</span>' : "";
 
-            var catVal = (todo.category || "Other");
-            var catLower = catVal.toLowerCase();
+            var todoColor = todo.category || "white";
+            var colorMap = { white:"#e8e8f0", red:"#ef4444", orange:"#fb923c", yellow:"#fbbf24", green:"#4ade80", blue:"#60a5fa", purple:"#a78bfa" };
+            var dotColor = colorMap[todoColor] || colorMap.white;
             div.innerHTML = '<button class="todo-remote-check">' + (todo.completed ? "\u2713" : "") + '</button>' +
-              '<select class="todo-cat-select cat-' + catLower + '">' +
-                '<option value="Work"' + (catVal === "Work" ? " selected" : "") + '>Work</option>' +
-                '<option value="Home"' + (catVal === "Home" ? " selected" : "") + '>Home</option>' +
-                '<option value="Groceries"' + (catVal === "Groceries" ? " selected" : "") + '>Groceries</option>' +
-                '<option value="Errands"' + (catVal === "Errands" ? " selected" : "") + '>Errands</option>' +
-                '<option value="Other"' + (catVal === "Other" ? " selected" : "") + '>Other</option>' +
-              '</select> ' +
+              '<span class="todo-color-dot" style="background:' + dotColor + ';" data-todo-key="' + todo._key + '"></span>' +
               '<span class="todo-remote-text">' + escapeHtml(todo.text) + subtaskBadge + '</span>' +
               '<button class="todo-remote-delete">Del</button>';
 
@@ -855,10 +851,13 @@
               e.stopPropagation();
               db.ref("portal/todos/" + todo._key + "/completed").set(!todo.completed);
             });
-            div.querySelector(".todo-cat-select").addEventListener("change", function (e) {
+            // Tap color dot to cycle through colors
+            div.querySelector(".todo-color-dot").addEventListener("click", function (e) {
               e.stopPropagation();
-              db.ref("portal/todos/" + todo._key + "/category").set(e.target.value);
-              showToast("Moved to " + e.target.value);
+              var colors = ["white", "red", "orange", "yellow", "green", "blue", "purple"];
+              var idx = colors.indexOf(todoColor);
+              var next = colors[(idx + 1) % colors.length];
+              db.ref("portal/todos/" + todo._key + "/category").set(next);
             });
             div.querySelector(".todo-remote-delete").addEventListener("click", function (e) {
               e.stopPropagation();
@@ -953,16 +952,28 @@
         renderRemoteTodos(lastTodos);
       }, function () {});
 
+      // Color button selection
+      var todoColorBtns = document.querySelectorAll(".todo-color-btn");
+      var selectedTodoColor = "white";
+      for (var tci = 0; tci < todoColorBtns.length; tci++) {
+        (function (btn) {
+          btn.addEventListener("click", function () {
+            for (var tcj = 0; tcj < todoColorBtns.length; tcj++) todoColorBtns[tcj].classList.remove("selected");
+            btn.classList.add("selected");
+            selectedTodoColor = btn.getAttribute("data-todo-color");
+          });
+        })(todoColorBtns[tci]);
+      }
+
       document.getElementById("todo-add").addEventListener("click", function () {
         var input = document.getElementById("todo-text");
         var text = input.value.trim();
         if (!text) return;
-        var category = document.getElementById("todo-category").value;
         var priority = document.getElementById("todo-priority").value;
         var key = db.ref("portal/todos").push().key;
         db.ref("portal/todos/" + key).set({
           text: text,
-          category: category,
+          category: selectedTodoColor,
           priority: priority,
           completed: false,
           created: Date.now()

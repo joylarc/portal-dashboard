@@ -429,22 +429,23 @@
       var todos = snap.val() || {};
       var display = document.getElementById("todos-display");
 
-      // Group by category, sort by priority then creation
-      var categories = {};
+      // Group by color, sort by priority
+      var colorGroups = {};
       var keys = Object.keys(todos);
+      var colorMap = { white:"#e8e8f0", red:"#ef4444", orange:"#fb923c", yellow:"#fbbf24", green:"#4ade80", blue:"#60a5fa", purple:"#a78bfa" };
       for (var i = 0; i < keys.length; i++) {
         var todo = todos[keys[i]];
         if (!todo) continue;
         todo._key = keys[i];
-        var cat = todo.category || "Other";
-        if (!categories[cat]) categories[cat] = [];
-        categories[cat].push(todo);
+        var col = todo.category || "white";
+        if (!colorGroups[col]) colorGroups[col] = [];
+        colorGroups[col].push(todo);
       }
 
-      // Sort within categories: incomplete first, then by priority
+      // Sort within groups: incomplete first, then by priority
       var priorityOrder = { high: 0, medium: 1, low: 2 };
-      for (var c in categories) {
-        categories[c].sort(function (a, b) {
+      for (var c in colorGroups) {
+        colorGroups[c].sort(function (a, b) {
           if (a.completed !== b.completed) return a.completed ? 1 : -1;
           var pa = priorityOrder[a.priority || "low"] || 2;
           var pb = priorityOrder[b.priority || "low"] || 2;
@@ -452,19 +453,22 @@
         });
       }
 
-      var catOrder = ["Work", "Home", "Groceries", "Errands", "Other"];
+      var colorOrder = ["red", "orange", "yellow", "green", "blue", "purple", "white"];
       var html = '<div class="todos-header">To-Do</div>';
       html += '<div class="todos-columns">';
 
-      for (var ci = 0; ci < catOrder.length; ci++) {
-        var catName = catOrder[ci];
-        if (!categories[catName] || categories[catName].length === 0) continue;
+      for (var ci = 0; ci < colorOrder.length; ci++) {
+        var colName = colorOrder[ci];
+        if (!colorGroups[colName] || colorGroups[colName].length === 0) continue;
 
+        var dotColor = colorMap[colName] || colorMap.white;
         html += '<div class="todo-category-group">';
-        html += '<div class="todo-category-label cat-' + catName.toLowerCase() + '">' + catName + '</div>';
+        html += '<div class="todo-category-label" style="border-color:' + dotColor + ';color:' + dotColor + ';">';
+        html += '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + dotColor + ';margin-right:6px;"></span>';
+        html += '</div>';
 
-        for (var ti = 0; ti < categories[catName].length; ti++) {
-          var t = categories[catName][ti];
+        for (var ti = 0; ti < colorGroups[colName].length; ti++) {
+          var t = colorGroups[colName][ti];
           var completedClass = t.completed ? " completed" : "";
           var priorityClass = " todo-priority-" + (t.priority || "low");
           html += '<div class="todo-item' + completedClass + priorityClass + '" data-todo-key="' + t._key + '">';
@@ -904,33 +908,35 @@
         return;
       }
 
-      var categories = {};
+      var pomoColorMap = { white:"#e8e8f0", red:"#ef4444", orange:"#fb923c", yellow:"#fbbf24", green:"#4ade80", blue:"#60a5fa", purple:"#a78bfa" };
+      var pomoColorGroups = {};
       for (var i = 0; i < keys.length; i++) {
         var todo = todos[keys[i]];
         if (!todo) continue;
         todo._key = keys[i];
-        var cat = todo.category || "Other";
-        if (!categories[cat]) categories[cat] = [];
-        categories[cat].push(todo);
+        var col = todo.category || "white";
+        if (!pomoColorGroups[col]) pomoColorGroups[col] = [];
+        pomoColorGroups[col].push(todo);
       }
 
       var priorityOrder = { high: 0, medium: 1, low: 2 };
-      for (var c in categories) {
-        categories[c].sort(function (a, b) {
+      for (var c in pomoColorGroups) {
+        pomoColorGroups[c].sort(function (a, b) {
           if (a.completed !== b.completed) return a.completed ? 1 : -1;
           return (priorityOrder[a.priority || "low"] || 2) - (priorityOrder[b.priority || "low"] || 2);
         });
       }
 
-      var catOrder = ["Work", "Home", "Groceries", "Errands", "Other"];
+      var pomoColorOrder = ["red", "orange", "yellow", "green", "blue", "purple", "white"];
       var html = '';
-      for (var ci = 0; ci < catOrder.length; ci++) {
-        var catName = catOrder[ci];
-        if (!categories[catName] || categories[catName].length === 0) continue;
+      for (var ci = 0; ci < pomoColorOrder.length; ci++) {
+        var colName = pomoColorOrder[ci];
+        if (!pomoColorGroups[colName] || pomoColorGroups[colName].length === 0) continue;
+        var dotColor = pomoColorMap[colName] || pomoColorMap.white;
         html += '<div class="todo-category-group">';
-        html += '<div class="todo-category-label cat-' + catName.toLowerCase() + '">' + catName + '</div>';
-        for (var ti = 0; ti < categories[catName].length; ti++) {
-          var t = categories[catName][ti];
+        html += '<div class="todo-category-label" style="border-color:' + dotColor + ';color:' + dotColor + ';"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + dotColor + ';"></span></div>';
+        for (var ti = 0; ti < pomoColorGroups[colName].length; ti++) {
+          var t = pomoColorGroups[colName][ti];
           var completedClass = t.completed ? " completed" : "";
           var priorityClass = " todo-priority-" + (t.priority || "low");
           html += '<div class="todo-item' + completedClass + priorityClass + '" data-pomo-todo-key="' + t._key + '">';
