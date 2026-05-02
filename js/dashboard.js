@@ -281,7 +281,7 @@
         const defaultDisplay = catName === "Active" ? "block" : "none";
         alertHtml += `<div class="mta-alert-cat-body" data-alert-cat-body="${catId}" style="display:${defaultDisplay};">`;
 
-        const lineOrder = ["A", "C", "E", "2", "3", "4", "5", "6", "R", "General"];
+        const lineOrder = ["1", "2", "3", "4", "5", "6", "7", "A", "B", "C", "D", "E", "F", "G", "J", "L", "M", "N", "Q", "R", "S", "W", "Z", "SIR", "General"];
         lineOrder.forEach((line) => {
           if (!byLine[line]) return;
           const lineId = catId + "-" + line;

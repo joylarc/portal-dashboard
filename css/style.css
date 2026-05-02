@@ -472,6 +472,13 @@ html, body {
 
 .mta-line-badge.line-7 { background: var(--mta-purple); }
 
+.mta-line-badge.line-G { background: #6CBE45; }
+.mta-line-badge.line-J,
+.mta-line-badge.line-Z { background: #996633; }
+.mta-line-badge.line-L { background: #A7A9AC; color: #333; }
+.mta-line-badge.line-S,
+.mta-line-badge.line-SIR { background: #808183; }
+
 .mta-direction {
   color: var(--text-secondary);
   min-width: 70px;
