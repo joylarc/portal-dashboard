@@ -282,13 +282,82 @@ html, body {
   color: var(--text-dim);
 }
 
-/* Service Alerts */
+/* Service Alerts — hidden in widget, shown in fullscreen */
 .mta-alerts {
   flex-shrink: 0;
+  display: none;
+}
+
+.widget.fullscreen .mta-alerts {
+  display: block;
+  margin-top: 12px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 8px;
+}
+
+.mta-alerts-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 8px 4px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mta-alerts-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #ff8a85;
+}
+
+.mta-alerts-lines {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.mta-alerts-chevron {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+
+.mta-alerts-body {
+  padding-left: 4px;
+}
+
+.mta-alert-line-group {
+  margin-bottom: 4px;
+}
+
+.mta-alert-line-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 6px 4px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mta-alert-line-header:active {
+  background: rgba(255,255,255,0.03);
+  border-radius: 6px;
+}
+
+.mta-alert-line-chevron {
+  margin-left: auto;
+  font-size: 0.6rem;
+  color: var(--text-dim);
+}
+
+.mta-alert-line-messages {
+  padding-left: 12px;
 }
 
 .mta-alert {
-  background: rgba(238, 53, 46, 0.12);
+  background: rgba(238, 53, 46, 0.08);
   border-left: 3px solid var(--mta-red);
   padding: 8px 12px;
   border-radius: 0 8px 8px 0;
@@ -296,11 +365,6 @@ html, body {
   color: #ff8a85;
   margin-bottom: 6px;
   line-height: 1.4;
-}
-
-.mta-alert-line {
-  font-weight: 600;
-  color: #ff6b6b;
 }
 
 /* Station Groups */

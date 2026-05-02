@@ -206,17 +206,91 @@
       minute: "2-digit",
     })}`;
 
-    // Alerts
+    // Alerts — only shown in fullscreen, collapsible by line
     alertsEl.innerHTML = "";
     if (data.alerts && data.alerts.length > 0) {
+      // Group alerts by line
+      const alertsByLine = {};
       data.alerts.forEach((alert) => {
-        const div = document.createElement("div");
-        div.className = "mta-alert";
-        const lineLabels = alert.lines
-          .map((l) => `<span class="mta-alert-line">${l}</span>`)
-          .join(" ");
-        div.innerHTML = `\u26a0\ufe0f ${lineLabels} ${alert.message}`;
-        alertsEl.appendChild(div);
+        const lines = alert.lines || [];
+        if (lines.length === 0) {
+          // No specific line — file under "Other"
+          if (!alertsByLine["Other"]) alertsByLine["Other"] = [];
+          alertsByLine["Other"].push(alert.message);
+        } else {
+          lines.forEach((line) => {
+            if (!alertsByLine[line]) alertsByLine[line] = [];
+            alertsByLine[line].push(alert.message);
+          });
+        }
+      });
+
+      // Count affected lines
+      const affectedLines = Object.keys(alertsByLine).filter(l => l !== "Other");
+      const totalAlerts = data.alerts.length;
+
+      // Build collapsible alerts section
+      let alertHtml = `<div class="mta-alerts-header" id="mta-alerts-toggle">`;
+      alertHtml += `<span class="mta-alerts-title">Service Alerts (${totalAlerts})</span>`;
+      alertHtml += `<span class="mta-alerts-lines">`;
+      affectedLines.forEach((line) => {
+        alertHtml += `<span class="mta-line-badge line-${line}" style="width:20px;height:20px;font-size:0.65rem;">${line}</span>`;
+      });
+      alertHtml += `</span>`;
+      alertHtml += `<span class="mta-alerts-chevron" id="mta-alerts-chevron">&#9660;</span>`;
+      alertHtml += `</div>`;
+
+      // Line groups (hidden by default)
+      alertHtml += `<div class="mta-alerts-body" id="mta-alerts-body" style="display:none;">`;
+      const lineOrder = ["A", "C", "E", "2", "3", "4", "5", "6", "R", "Other"];
+      lineOrder.forEach((line) => {
+        if (!alertsByLine[line]) return;
+        alertHtml += `<div class="mta-alert-line-group">`;
+        alertHtml += `<div class="mta-alert-line-header" data-alert-line="${line}">`;
+        if (line !== "Other") {
+          alertHtml += `<span class="mta-line-badge line-${line}">${line}</span>`;
+        }
+        alertHtml += ` <span>${line === "Other" ? "General" : line + " train"} (${alertsByLine[line].length})</span>`;
+        alertHtml += `<span class="mta-alert-line-chevron">&#9654;</span>`;
+        alertHtml += `</div>`;
+        alertHtml += `<div class="mta-alert-line-messages" data-alert-messages="${line}" style="display:none;">`;
+        // Deduplicate messages for this line
+        const seen = {};
+        alertsByLine[line].forEach((msg) => {
+          if (seen[msg]) return;
+          seen[msg] = true;
+          alertHtml += `<div class="mta-alert">${msg}</div>`;
+        });
+        alertHtml += `</div></div>`;
+      });
+      alertHtml += `</div>`;
+
+      alertsEl.innerHTML = alertHtml;
+
+      // Toggle main alerts section
+      const alertsToggle = document.getElementById("mta-alerts-toggle");
+      const alertsBody = document.getElementById("mta-alerts-body");
+      const alertsChevron = document.getElementById("mta-alerts-chevron");
+      if (alertsToggle) {
+        alertsToggle.addEventListener("click", function () {
+          const isOpen = alertsBody.style.display !== "none";
+          alertsBody.style.display = isOpen ? "none" : "block";
+          alertsChevron.innerHTML = isOpen ? "&#9660;" : "&#9650;";
+        });
+      }
+
+      // Toggle individual line alerts
+      document.querySelectorAll(".mta-alert-line-header").forEach((header) => {
+        header.addEventListener("click", function () {
+          const line = header.getAttribute("data-alert-line");
+          const msgs = document.querySelector(`[data-alert-messages="${line}"]`);
+          const chevron = header.querySelector(".mta-alert-line-chevron");
+          if (msgs) {
+            const isOpen = msgs.style.display !== "none";
+            msgs.style.display = isOpen ? "none" : "block";
+            chevron.innerHTML = isOpen ? "&#9654;" : "&#9660;";
+          }
+        });
       });
     }
 
