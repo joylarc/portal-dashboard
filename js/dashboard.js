@@ -206,68 +206,109 @@
       minute: "2-digit",
     })}`;
 
-    // Alerts — only shown in fullscreen, collapsible by line
+    // Alerts — only shown in fullscreen, collapsible by category then line
     alertsEl.innerHTML = "";
     if (data.alerts && data.alerts.length > 0) {
-      // Group alerts by line
-      const alertsByLine = {};
+      // Categorize alerts
+      const categories = {
+        "Active": [],      // Delays, Reroute
+        "Service Changes": [], // Planned-*, Reduced Service, Extra Service, Special Schedule
+        "Station Info": []  // Boarding Change, Station Notice, Other
+      };
+
       data.alerts.forEach((alert) => {
-        const lines = alert.lines || [];
-        if (lines.length === 0) {
-          // No specific line — file under "Other"
-          if (!alertsByLine["Other"]) alertsByLine["Other"] = [];
-          alertsByLine["Other"].push(alert.message);
+        const t = alert.type || "";
+        if (t === "Delays" || t === "Reroute") {
+          categories["Active"].push(alert);
+        } else if (t.startsWith("Planned") || t === "Reduced Service" || t === "Extra Service" || t === "Special Schedule") {
+          categories["Service Changes"].push(alert);
         } else {
-          lines.forEach((line) => {
-            if (!alertsByLine[line]) alertsByLine[line] = [];
-            alertsByLine[line].push(alert.message);
-          });
+          categories["Station Info"].push(alert);
         }
       });
 
-      // Count affected lines
-      const affectedLines = Object.keys(alertsByLine).filter(l => l !== "Other");
+      // Count active alerts for the header
+      const activeCount = categories["Active"].length;
       const totalAlerts = data.alerts.length;
+      const headerLabel = activeCount > 0
+        ? `Service Alerts (${activeCount} active, ${totalAlerts} total)`
+        : `Service Alerts (${totalAlerts})`;
 
-      // Build collapsible alerts section
+      // Collect all affected lines for badge display
+      const allLines = {};
+      categories["Active"].forEach((a) => { (a.lines || []).forEach((l) => { allLines[l] = true; }); });
+
       let alertHtml = `<div class="mta-alerts-header" id="mta-alerts-toggle">`;
-      alertHtml += `<span class="mta-alerts-title">Service Alerts (${totalAlerts})</span>`;
+      alertHtml += `<span class="mta-alerts-title">${headerLabel}</span>`;
       alertHtml += `<span class="mta-alerts-lines">`;
-      affectedLines.forEach((line) => {
+      Object.keys(allLines).forEach((line) => {
         alertHtml += `<span class="mta-line-badge line-${line}" style="width:20px;height:20px;font-size:0.65rem;">${line}</span>`;
       });
       alertHtml += `</span>`;
       alertHtml += `<span class="mta-alerts-chevron" id="mta-alerts-chevron">&#9660;</span>`;
       alertHtml += `</div>`;
 
-      // Line groups (hidden by default)
       alertHtml += `<div class="mta-alerts-body" id="mta-alerts-body" style="display:none;">`;
-      const lineOrder = ["A", "C", "E", "2", "3", "4", "5", "6", "R", "Other"];
-      lineOrder.forEach((line) => {
-        if (!alertsByLine[line]) return;
-        alertHtml += `<div class="mta-alert-line-group">`;
-        alertHtml += `<div class="mta-alert-line-header" data-alert-line="${line}">`;
-        if (line !== "Other") {
-          alertHtml += `<span class="mta-line-badge line-${line}">${line}</span>`;
-        }
-        alertHtml += ` <span>${line === "Other" ? "General" : line + " train"} (${alertsByLine[line].length})</span>`;
-        alertHtml += `<span class="mta-alert-line-chevron">&#9654;</span>`;
-        alertHtml += `</div>`;
-        alertHtml += `<div class="mta-alert-line-messages" data-alert-messages="${line}" style="display:none;">`;
-        // Deduplicate messages for this line
-        const seen = {};
-        alertsByLine[line].forEach((msg) => {
-          if (seen[msg]) return;
-          seen[msg] = true;
-          alertHtml += `<div class="mta-alert">${msg}</div>`;
-        });
-        alertHtml += `</div></div>`;
-      });
-      alertHtml += `</div>`;
 
+      const catOrder = ["Active", "Service Changes", "Station Info"];
+      const catColors = { "Active": "#ef4444", "Service Changes": "#fbbf24", "Station Info": "#60a5fa" };
+
+      catOrder.forEach((catName) => {
+        const catAlerts = categories[catName];
+        if (catAlerts.length === 0) return;
+
+        // Group by line within category
+        const byLine = {};
+        catAlerts.forEach((alert) => {
+          const lines = alert.lines || [];
+          if (lines.length === 0) {
+            if (!byLine["General"]) byLine["General"] = [];
+            byLine["General"].push(alert.message);
+          } else {
+            lines.forEach((line) => {
+              if (!byLine[line]) byLine[line] = [];
+              byLine[line].push(alert.message);
+            });
+          }
+        });
+
+        const catId = catName.replace(/\s/g, "-");
+        alertHtml += `<div class="mta-alert-cat-header" data-alert-cat="${catId}" style="border-left:3px solid ${catColors[catName]};">`;
+        alertHtml += `<span>${catName} (${catAlerts.length})</span>`;
+        alertHtml += `<span class="mta-alert-line-chevron" data-cat-chevron="${catId}">&#9654;</span>`;
+        alertHtml += `</div>`;
+        // Active alerts default open, others closed
+        const defaultDisplay = catName === "Active" ? "block" : "none";
+        alertHtml += `<div class="mta-alert-cat-body" data-alert-cat-body="${catId}" style="display:${defaultDisplay};">`;
+
+        const lineOrder = ["A", "C", "E", "2", "3", "4", "5", "6", "R", "General"];
+        lineOrder.forEach((line) => {
+          if (!byLine[line]) return;
+          const lineId = catId + "-" + line;
+          alertHtml += `<div class="mta-alert-line-group">`;
+          alertHtml += `<div class="mta-alert-line-header" data-alert-line="${lineId}">`;
+          if (line !== "General") {
+            alertHtml += `<span class="mta-line-badge line-${line}">${line}</span>`;
+          }
+          alertHtml += ` <span>${line === "General" ? "General" : line + " train"} (${byLine[line].length})</span>`;
+          alertHtml += `<span class="mta-alert-line-chevron">&#9654;</span>`;
+          alertHtml += `</div>`;
+          alertHtml += `<div class="mta-alert-line-messages" data-alert-messages="${lineId}" style="display:none;">`;
+          const seen = {};
+          byLine[line].forEach((msg) => {
+            if (seen[msg]) return;
+            seen[msg] = true;
+            alertHtml += `<div class="mta-alert">${msg}</div>`;
+          });
+          alertHtml += `</div></div>`;
+        });
+        alertHtml += `</div>`;
+      });
+
+      alertHtml += `</div>`;
       alertsEl.innerHTML = alertHtml;
 
-      // Toggle main alerts section
+      // Toggle main section
       const alertsToggle = document.getElementById("mta-alerts-toggle");
       const alertsBody = document.getElementById("mta-alerts-body");
       const alertsChevron = document.getElementById("mta-alerts-chevron");
@@ -279,11 +320,25 @@
         });
       }
 
+      // Toggle category sections
+      document.querySelectorAll(".mta-alert-cat-header").forEach((header) => {
+        header.addEventListener("click", function () {
+          const catId = header.getAttribute("data-alert-cat");
+          const body = document.querySelector(`[data-alert-cat-body="${catId}"]`);
+          const chevron = header.querySelector(`[data-cat-chevron]`);
+          if (body) {
+            const isOpen = body.style.display !== "none";
+            body.style.display = isOpen ? "none" : "block";
+            if (chevron) chevron.innerHTML = isOpen ? "&#9654;" : "&#9660;";
+          }
+        });
+      });
+
       // Toggle individual line alerts
       document.querySelectorAll(".mta-alert-line-header").forEach((header) => {
         header.addEventListener("click", function () {
-          const line = header.getAttribute("data-alert-line");
-          const msgs = document.querySelector(`[data-alert-messages="${line}"]`);
+          const lineId = header.getAttribute("data-alert-line");
+          const msgs = document.querySelector(`[data-alert-messages="${lineId}"]`);
           const chevron = header.querySelector(".mta-alert-line-chevron");
           if (msgs) {
             const isOpen = msgs.style.display !== "none";

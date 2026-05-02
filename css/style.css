@@ -326,6 +326,26 @@ html, body {
   padding-left: 4px;
 }
 
+.mta-alert-cat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.03);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mta-alert-cat-body {
+  padding-left: 8px;
+  margin-bottom: 8px;
+}
+
 .mta-alert-line-group {
   margin-bottom: 4px;
 }
