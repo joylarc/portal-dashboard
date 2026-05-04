@@ -637,6 +637,8 @@
       </div>
       <div class="youtube-controls hidden" id="youtube-controls">
         <div class="action-row" style="margin-top: 8px;">
+          <button class="action-btn" id="yt-pause">Pause</button>
+          <button class="action-btn hidden" id="yt-resume">Resume</button>
           <button class="action-btn" id="yt-stop">Stop</button>
         </div>
       </div>
@@ -1164,6 +1166,8 @@
 
       // ── YouTube ────────────────────────────────────────
       var ytControls = document.getElementById("youtube-controls");
+      var ytPauseBtn = document.getElementById("yt-pause");
+      var ytResumeBtn = document.getElementById("yt-resume");
 
       document.getElementById("youtube-send").addEventListener("click", function () {
         var input = document.getElementById("youtube-url");
@@ -1207,12 +1211,30 @@
           showToast("Sending to Portal...");
         }
         ytControls.classList.remove("hidden");
+        ytPauseBtn.classList.remove("hidden");
+        ytResumeBtn.classList.add("hidden");
         input.value = "";
+      });
+
+      ytPauseBtn.addEventListener("click", function () {
+        sendCommand({ action: "pause-youtube" });
+        ytPauseBtn.classList.add("hidden");
+        ytResumeBtn.classList.remove("hidden");
+        showToast("YouTube paused");
+      });
+
+      ytResumeBtn.addEventListener("click", function () {
+        sendCommand({ action: "resume-youtube" });
+        ytResumeBtn.classList.add("hidden");
+        ytPauseBtn.classList.remove("hidden");
+        showToast("YouTube resumed");
       });
 
       document.getElementById("yt-stop").addEventListener("click", function () {
         sendCommand({ action: "stop-youtube" });
         ytControls.classList.add("hidden");
+        ytPauseBtn.classList.remove("hidden");
+        ytResumeBtn.classList.add("hidden");
         showToast("YouTube stopped");
       });
 

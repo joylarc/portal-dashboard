@@ -134,6 +134,12 @@
       case "stop-youtube":
         hideYouTube();
         break;
+      case "pause-youtube":
+        pauseYouTube();
+        break;
+      case "resume-youtube":
+        resumeYouTube();
+        break;
       case "show-recipe":
         showRecipe(cmd.url);
         break;
@@ -209,7 +215,12 @@
 
   // ── Widget Switching ─────────────────────────────────
   function showWidget(widgetName) {
-    hideYouTube();
+    // Pause YouTube instead of destroying it so we can resume later
+    if (ytPlayer && !ytPaused) {
+      pauseYouTube();
+    } else {
+      document.getElementById("youtube-overlay").classList.add("hidden");
+    }
     hideSleep();
 
     var dashboard = document.getElementById("dashboard");
@@ -226,7 +237,12 @@
   }
 
   function showAllWidgets() {
-    hideYouTube();
+    // Pause YouTube instead of destroying it so we can resume later
+    if (ytPlayer && !ytPaused) {
+      pauseYouTube();
+    } else {
+      document.getElementById("youtube-overlay").classList.add("hidden");
+    }
     hideSleep();
 
     var dashboard = document.getElementById("dashboard");
@@ -237,50 +253,112 @@
     dashboard.classList.remove("has-fullscreen");
   }
 
-  // ── YouTube ──────────────────────────────────────────
-  function playYouTube(videoId) {
-    hideSleep();
+  // ── YouTube (IFrame Player API) ─────────────────────
+  var ytPlayer = null;
+  var ytPlayerReady = false;
+  var ytPaused = false; // true when video is paused but still alive
 
+  // Called automatically by the YouTube IFrame API once it loads
+  window.onYouTubeIframeAPIReady = function () {
+    // API is ready — players will be created on demand
+  };
+
+  function createYTPlayer(videoId, listId) {
     var overlay = document.getElementById("youtube-overlay");
     var container = document.getElementById("youtube-container");
 
-    container.innerHTML = '<iframe ' +
-      'src="https://www.youtube.com/embed/' + videoId + '?autoplay=1&rel=0&modestbranding=1" ' +
-      'frameborder="0" ' +
-      'allow="autoplay; encrypted-media; fullscreen" ' +
-      'allowfullscreen></iframe>';
+    // Destroy any existing player first
+    destroyYTPlayer();
+
+    // Create a fresh div for the player
+    var div = document.createElement("div");
+    div.id = "yt-player-target";
+    container.appendChild(div);
+
+    var playerVars = { autoplay: 1, rel: 0, modestbranding: 1 };
+    if (listId) playerVars.list = listId;
+
+    ytPlayerReady = false;
+    ytPaused = false;
+
+    // If YT API loaded, use it; otherwise fall back to raw iframe
+    if (typeof YT !== "undefined" && YT.Player) {
+      ytPlayer = new YT.Player("yt-player-target", {
+        videoId: videoId || undefined,
+        playerVars: playerVars,
+        events: {
+          onReady: function () { ytPlayerReady = true; },
+          onError: function () { ytPlayerReady = true; }
+        }
+      });
+    } else {
+      // Fallback: raw iframe (no pause/resume, but video still plays)
+      var src = "https://www.youtube.com/embed/";
+      if (videoId) {
+        src += videoId + "?autoplay=1&rel=0&modestbranding=1";
+        if (listId) src += "&list=" + listId;
+      } else if (listId) {
+        src += "?listType=playlist&list=" + listId + "&autoplay=1&rel=0&modestbranding=1";
+      }
+      container.innerHTML = '<iframe src="' + src + '" frameborder="0" ' +
+        'allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>';
+    }
 
     overlay.classList.remove("hidden");
+  }
+
+  function destroyYTPlayer() {
+    if (ytPlayer && typeof ytPlayer.destroy === "function") {
+      try { ytPlayer.destroy(); } catch (e) {}
+    }
+    ytPlayer = null;
+    ytPlayerReady = false;
+    ytPaused = false;
+    var container = document.getElementById("youtube-container");
+    container.innerHTML = "";
+  }
+
+  function playYouTube(videoId) {
+    hideSleep();
+    createYTPlayer(videoId, null);
   }
 
   function playYouTubePlaylist(listId, videoId) {
     hideSleep();
-
-    var overlay = document.getElementById("youtube-overlay");
-    var container = document.getElementById("youtube-container");
-
-    // If we have both a video ID and playlist, start at that video
-    var src = "https://www.youtube.com/embed/";
-    if (videoId) {
-      src += videoId + "?autoplay=1&rel=0&modestbranding=1&list=" + listId;
-    } else {
-      src += "?listType=playlist&list=" + listId + "&autoplay=1&rel=0&modestbranding=1";
-    }
-
-    container.innerHTML = '<iframe ' +
-      'src="' + src + '" ' +
-      'frameborder="0" ' +
-      'allow="autoplay; encrypted-media; fullscreen" ' +
-      'allowfullscreen></iframe>';
-
-    overlay.classList.remove("hidden");
+    createYTPlayer(videoId, listId);
   }
 
+  function pauseYouTube() {
+    if (ytPlayer && ytPlayerReady && typeof ytPlayer.pauseVideo === "function") {
+      ytPlayer.pauseVideo();
+    }
+    ytPaused = true;
+    document.getElementById("youtube-overlay").classList.add("hidden");
+  }
+
+  function resumeYouTube() {
+    if (!ytPaused) return;
+    hideSleep();
+    document.getElementById("youtube-overlay").classList.remove("hidden");
+    if (ytPlayer && ytPlayerReady && typeof ytPlayer.playVideo === "function") {
+      ytPlayer.playVideo();
+    }
+    ytPaused = false;
+  }
+
+  // Pause-aware hide: pauses a playing video so it can be resumed later
+  function suspendYouTube() {
+    if (ytPlayer && !ytPaused) {
+      pauseYouTube();
+    } else {
+      document.getElementById("youtube-overlay").classList.add("hidden");
+    }
+  }
+
+  // Full stop: destroys the player entirely
   function hideYouTube() {
-    var overlay = document.getElementById("youtube-overlay");
-    var container = document.getElementById("youtube-container");
-    overlay.classList.add("hidden");
-    container.innerHTML = "";
+    document.getElementById("youtube-overlay").classList.add("hidden");
+    destroyYTPlayer();
     // Restart keep-awake video after YouTube stops
     if (window.restartKeepAwake) window.restartKeepAwake();
   }
@@ -297,7 +375,7 @@
   // ── Notes ────────────────────────────────────────────
   function showNotes(html) {
     hideSleep();
-    hideYouTube();
+    suspendYouTube();
     hideRecipe();
 
     var overlay = document.getElementById("notes-overlay");
@@ -329,7 +407,7 @@
   // ── Recipes ──────────────────────────────────────────
   function showRecipe(url) {
     hideSleep();
-    hideYouTube();
+    suspendYouTube();
 
     var overlay = document.getElementById("recipe-overlay");
     var container = document.getElementById("recipe-container");
@@ -347,7 +425,7 @@
 
   // ── Weather ──────────────────────────────────────────
   function showWeather() {
-    hideSleep(); hideYouTube(); hideRecipe(); hideNotes(); hideTodos(); hideCalendar();
+    hideSleep(); suspendYouTube(); hideRecipe(); hideNotes(); hideTodos(); hideCalendar();
 
     var overlay = document.getElementById("weather-overlay");
     var display = document.getElementById("weather-display");
@@ -415,7 +493,7 @@
 
   // ── To-Do List ──────────────────────────────────────
   function showTodos() {
-    hideSleep(); hideYouTube(); hideRecipe(); hideNotes(); hideWeather(); hideCalendar();
+    hideSleep(); suspendYouTube(); hideRecipe(); hideNotes(); hideWeather(); hideCalendar();
     document.getElementById("todos-overlay").classList.remove("hidden");
     renderTodos();
   }
@@ -539,7 +617,7 @@
 
   // ── Calendar Overlay ────────────────────────────────
   function showCalendar() {
-    hideSleep(); hideYouTube(); hideRecipe(); hideNotes(); hideWeather(); hideTodos();
+    hideSleep(); suspendYouTube(); hideRecipe(); hideNotes(); hideWeather(); hideTodos();
 
     var overlay = document.getElementById("calendar-overlay");
     var display = document.getElementById("calendar-display");
@@ -584,7 +662,7 @@
 
   function showLastRecipe() {
     // Show the recipe list info - actual recipe selection happens from remote
-    hideSleep(); hideYouTube(); hideNotes(); hideWeather(); hideTodos(); hideCalendar();
+    hideSleep(); suspendYouTube(); hideNotes(); hideWeather(); hideTodos(); hideCalendar();
     var overlay = document.getElementById("recipe-overlay");
     var container = document.getElementById("recipe-container");
     container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-dim);font-size:1.5rem;">Select a recipe from the remote</div>';
@@ -593,6 +671,11 @@
 
   function showYouTubePrompt() {
     hideSleep(); hideRecipe(); hideNotes(); hideWeather(); hideTodos(); hideCalendar();
+    // If a video is paused, resume it instead of showing the prompt
+    if (ytPaused && ytPlayer) {
+      resumeYouTube();
+      return;
+    }
     var overlay = document.getElementById("youtube-overlay");
     var container = document.getElementById("youtube-container");
     container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-dim);font-size:1.5rem;background:#000;">Send a video from the remote</div>';
@@ -601,7 +684,7 @@
 
   function showLastNotes() {
     // Show notes if there's existing content in Firebase
-    hideSleep(); hideYouTube(); hideRecipe(); hideWeather(); hideTodos(); hideCalendar();
+    hideSleep(); suspendYouTube(); hideRecipe(); hideWeather(); hideTodos(); hideCalendar();
     db.ref("portal/notes").once("value", function (snap) {
       var data = snap.val();
       var overlay = document.getElementById("notes-overlay");
@@ -648,12 +731,15 @@
       btn.addEventListener("click", function (e) {
         e.stopPropagation();
         var overlayId = btn.getAttribute("data-close");
+        if (overlayId === "youtube-overlay" && ytPlayer && !ytPaused) {
+          // Pause instead of destroy so user can resume
+          pauseYouTube();
+          btn.classList.remove("visible");
+          return;
+        }
         var overlay = document.getElementById(overlayId);
         if (overlay) {
           overlay.classList.add("hidden");
-          if (overlayId === "youtube-overlay") {
-            document.getElementById("youtube-container").innerHTML = "";
-          }
           if (overlayId === "calendar-overlay") {
             document.getElementById("calendar-display").innerHTML = "";
           }
@@ -668,7 +754,7 @@
   var timerAudioCtx = null;
 
   function showTimerOverlay() {
-    hideSleep(); hideYouTube(); hideRecipe(); hideNotes(); hideWeather(); hideTodos(); hideCalendar(); hidePomodoroOverlay();
+    hideSleep(); suspendYouTube(); hideRecipe(); hideNotes(); hideWeather(); hideTodos(); hideCalendar(); hidePomodoroOverlay();
     document.getElementById("timer-overlay").classList.remove("hidden");
     startTimerRendering();
   }
@@ -785,7 +871,7 @@
   var pomodoroAudioCtx = null;
 
   function showPomodoroOverlay() {
-    hideSleep(); hideYouTube(); hideRecipe(); hideNotes(); hideWeather(); hideTodos(); hideCalendar(); hideTimerOverlay();
+    hideSleep(); suspendYouTube(); hideRecipe(); hideNotes(); hideWeather(); hideTodos(); hideCalendar(); hideTimerOverlay();
     document.getElementById("pomodoro-overlay").classList.remove("hidden");
     startPomodoroRendering();
   }
