@@ -215,12 +215,7 @@
 
   // ── Widget Switching ─────────────────────────────────
   function showWidget(widgetName) {
-    // Pause YouTube instead of destroying it so we can resume later
-    if (ytPlayer && !ytPaused) {
-      pauseYouTube();
-    } else {
-      document.getElementById("youtube-overlay").classList.add("hidden");
-    }
+    suspendYouTube();
     hideSleep();
 
     var dashboard = document.getElementById("dashboard");
@@ -237,12 +232,7 @@
   }
 
   function showAllWidgets() {
-    // Pause YouTube instead of destroying it so we can resume later
-    if (ytPlayer && !ytPaused) {
-      pauseYouTube();
-    } else {
-      document.getElementById("youtube-overlay").classList.add("hidden");
-    }
+    suspendYouTube();
     hideSleep();
 
     var dashboard = document.getElementById("dashboard");
@@ -253,112 +243,102 @@
     dashboard.classList.remove("has-fullscreen");
   }
 
-  // ── YouTube (IFrame Player API) ─────────────────────
-  var ytPlayer = null;
-  var ytPlayerReady = false;
-  var ytPaused = false; // true when video is paused but still alive
+  // ── YouTube ──────────────────────────────────────────
+  // Uses postMessage to control the iframe — works without the YT IFrame API
+  var ytIframe = null;  // reference to the live iframe element
+  var ytPaused = false; // true when video is paused but iframe is still alive
 
-  // Called automatically by the YouTube IFrame API once it loads
-  window.onYouTubeIframeAPIReady = function () {
-    // API is ready — players will be created on demand
-  };
-
-  function createYTPlayer(videoId, listId) {
-    var overlay = document.getElementById("youtube-overlay");
-    var container = document.getElementById("youtube-container");
-
-    // Destroy any existing player first
-    destroyYTPlayer();
-
-    // Create a fresh div for the player
-    var div = document.createElement("div");
-    div.id = "yt-player-target";
-    container.appendChild(div);
-
-    var playerVars = { autoplay: 1, rel: 0, modestbranding: 1 };
-    if (listId) playerVars.list = listId;
-
-    ytPlayerReady = false;
-    ytPaused = false;
-
-    // If YT API loaded, use it; otherwise fall back to raw iframe
-    if (typeof YT !== "undefined" && YT.Player) {
-      ytPlayer = new YT.Player("yt-player-target", {
-        videoId: videoId || undefined,
-        playerVars: playerVars,
-        events: {
-          onReady: function () { ytPlayerReady = true; },
-          onError: function () { ytPlayerReady = true; }
-        }
-      });
-    } else {
-      // Fallback: raw iframe (no pause/resume, but video still plays)
-      var src = "https://www.youtube.com/embed/";
-      if (videoId) {
-        src += videoId + "?autoplay=1&rel=0&modestbranding=1";
-        if (listId) src += "&list=" + listId;
-      } else if (listId) {
-        src += "?listType=playlist&list=" + listId + "&autoplay=1&rel=0&modestbranding=1";
-      }
-      container.innerHTML = '<iframe src="' + src + '" frameborder="0" ' +
-        'allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>';
+  function ytCommand(func) {
+    if (ytIframe && ytIframe.contentWindow) {
+      ytIframe.contentWindow.postMessage(
+        JSON.stringify({ event: "command", func: func, args: [] }), "*"
+      );
     }
-
-    overlay.classList.remove("hidden");
-  }
-
-  function destroyYTPlayer() {
-    if (ytPlayer && typeof ytPlayer.destroy === "function") {
-      try { ytPlayer.destroy(); } catch (e) {}
-    }
-    ytPlayer = null;
-    ytPlayerReady = false;
-    ytPaused = false;
-    var container = document.getElementById("youtube-container");
-    container.innerHTML = "";
   }
 
   function playYouTube(videoId) {
     hideSleep();
-    createYTPlayer(videoId, null);
+
+    var overlay = document.getElementById("youtube-overlay");
+    var container = document.getElementById("youtube-container");
+    destroyYouTubeIframe();
+
+    var src = "https://www.youtube.com/embed/" + videoId +
+      "?autoplay=1&rel=0&modestbranding=1&enablejsapi=1";
+
+    var iframe = document.createElement("iframe");
+    iframe.src = src;
+    iframe.setAttribute("frameborder", "0");
+    iframe.setAttribute("allow", "autoplay; encrypted-media; fullscreen");
+    iframe.setAttribute("allowfullscreen", "");
+    container.appendChild(iframe);
+    ytIframe = iframe;
+    ytPaused = false;
+
+    overlay.classList.remove("hidden");
   }
 
   function playYouTubePlaylist(listId, videoId) {
     hideSleep();
-    createYTPlayer(videoId, listId);
+
+    var overlay = document.getElementById("youtube-overlay");
+    var container = document.getElementById("youtube-container");
+    destroyYouTubeIframe();
+
+    var src = "https://www.youtube.com/embed/";
+    if (videoId) {
+      src += videoId + "?autoplay=1&rel=0&modestbranding=1&enablejsapi=1&list=" + listId;
+    } else {
+      src += "?listType=playlist&list=" + listId + "&autoplay=1&rel=0&modestbranding=1&enablejsapi=1";
+    }
+
+    var iframe = document.createElement("iframe");
+    iframe.src = src;
+    iframe.setAttribute("frameborder", "0");
+    iframe.setAttribute("allow", "autoplay; encrypted-media; fullscreen");
+    iframe.setAttribute("allowfullscreen", "");
+    container.appendChild(iframe);
+    ytIframe = iframe;
+    ytPaused = false;
+
+    overlay.classList.remove("hidden");
+  }
+
+  function destroyYouTubeIframe() {
+    if (ytIframe && ytIframe.parentNode) {
+      ytIframe.parentNode.removeChild(ytIframe);
+    }
+    ytIframe = null;
+    ytPaused = false;
   }
 
   function pauseYouTube() {
-    if (ytPlayer && ytPlayerReady && typeof ytPlayer.pauseVideo === "function") {
-      ytPlayer.pauseVideo();
-    }
+    ytCommand("pauseVideo");
     ytPaused = true;
     document.getElementById("youtube-overlay").classList.add("hidden");
   }
 
   function resumeYouTube() {
-    if (!ytPaused) return;
+    if (!ytPaused || !ytIframe) return;
     hideSleep();
     document.getElementById("youtube-overlay").classList.remove("hidden");
-    if (ytPlayer && ytPlayerReady && typeof ytPlayer.playVideo === "function") {
-      ytPlayer.playVideo();
-    }
+    ytCommand("playVideo");
     ytPaused = false;
   }
 
   // Pause-aware hide: pauses a playing video so it can be resumed later
   function suspendYouTube() {
-    if (ytPlayer && !ytPaused) {
+    if (ytIframe && !ytPaused) {
       pauseYouTube();
     } else {
       document.getElementById("youtube-overlay").classList.add("hidden");
     }
   }
 
-  // Full stop: destroys the player entirely
+  // Full stop: destroys the iframe entirely
   function hideYouTube() {
     document.getElementById("youtube-overlay").classList.add("hidden");
-    destroyYTPlayer();
+    destroyYouTubeIframe();
     // Restart keep-awake video after YouTube stops
     if (window.restartKeepAwake) window.restartKeepAwake();
   }
@@ -672,7 +652,7 @@
   function showYouTubePrompt() {
     hideSleep(); hideRecipe(); hideNotes(); hideWeather(); hideTodos(); hideCalendar();
     // If a video is paused, resume it instead of showing the prompt
-    if (ytPaused && ytPlayer) {
+    if (ytPaused && ytIframe) {
       resumeYouTube();
       return;
     }
@@ -731,7 +711,7 @@
       btn.addEventListener("click", function (e) {
         e.stopPropagation();
         var overlayId = btn.getAttribute("data-close");
-        if (overlayId === "youtube-overlay" && ytPlayer && !ytPaused) {
+        if (overlayId === "youtube-overlay" && ytIframe && !ytPaused) {
           // Pause instead of destroy so user can resume
           pauseYouTube();
           btn.classList.remove("visible");
