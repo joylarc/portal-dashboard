@@ -48,7 +48,7 @@ iPhone-optimized web page, also hosted on GitHub Pages. Sends commands to Fireba
 - **Alarm** — set/delete alarms with a time picker
 - **Timer** — set countdown timers with labels, show on Portal, clear all
 - **Pomodoro** — set focus/break durations, start/stop, shows split view with to-do list
-- **YouTube** — paste a video, Shorts, or playlist URL to play on Portal; stop button
+- **YouTube** — paste a video, Shorts, or playlist URL to play on Portal; pause/resume/stop buttons
 - **Recipes** — tappable list of recipes from Google Drive folder
 - **Actions** — refresh, sleep, wake
 
@@ -180,7 +180,7 @@ portal-dashboard/
 ### To-Do List
 - **Color tags:** Tasks tagged with colors (white/red/orange/yellow/green/blue/purple). Tap the color dot on remote to cycle. Grouped by color on Portal.
 - **Sub-tasks:** Always visible under parent. Tap task text on remote to show/hide the add-subtask input.
-- **Portal display:** `css/style.css` — `.todo-item`, `.todo-subtask-portal`. Two-column via `.todos-columns`
+- **Portal display:** `css/style.css` — `.todo-item`, `.todo-subtask-portal`. 4-column layout in landscape via `.todos-columns`
 - **Priority colors:** `css/style.css` — `.todo-priority-high`, `.todo-priority-medium`
 
 ### Timer
@@ -203,6 +203,8 @@ portal-dashboard/
 
 ### YouTube
 - **Supported formats:** `remote.html` — parser handles `youtube.com/watch?v=`, `youtu.be/`, `youtube.com/shorts/`, `?list=` playlists
+- **Pause/resume:** Switching to another widget (from remote, app drawer, or back button) pauses the video. Tapping YouTube in the app drawer or hitting Resume on the remote resumes playback. Stop fully destroys the player.
+- **Implementation:** Uses `postMessage` with `enablejsapi=1` to control the iframe. The YouTube IFrame Player API JS doesn't load reliably on the Portal's old Android WebView, so we avoid it.
 
 ### Recipes
 - **Add recipes:** Add a Google Doc to the Drive folder. Appears automatically.
@@ -295,7 +297,7 @@ If the new app stores data, add a path in Firebase Console rules:
 ### Deployment
 - Push to `main` triggers GitHub Actions deploy to GitHub Pages
 - Takes 1-2 minutes to go live
-- Portal may cache — use Refresh button on remote
+- Portal aggressively caches CSS/JS — bump `?v=` query string on `style.css` in `index.html` for style changes, then use Refresh button on remote
 
 ---
 
@@ -309,4 +311,5 @@ If the new app stores data, add a path in Firebase Console rules:
 - **Keep-awake.** Unmuted silent looping video (NoSleep.js technique) prevents Portal screen sleep. Restarts after YouTube, 30s watchdog.
 - **Refresh loop prevention.** `lastTimestamp = Date.now()` ignores commands from before page load.
 - **MTA alerts.** Mercury extension field 1001 (string field 3) contains alert type. Categorized as Active/Service Changes/Station Info.
+- **YouTube control.** Uses `postMessage` with `enablejsapi=1` for pause/resume — the YouTube IFrame Player API JS doesn't load reliably on Portal's WebView.
 - **Wrangler CLI.** Has TLS cert issues on this Mac — update workers via Cloudflare dashboard paste-and-deploy.
