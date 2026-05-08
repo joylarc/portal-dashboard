@@ -668,7 +668,7 @@ html, body {
 .todos-overlay.hidden { display: none; }
 
 .todos-display {
-  max-width: 800px;
+  max-width: 100%;
   margin: 0 auto;
 }
 
